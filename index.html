@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AllTrails — Alert Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  /* AllTrails brand */
+  --at-green: #3ecf6e;
+  --at-green-lt: #edfff5;
+  --at-green-md: #b8e4c8;
+  /* Header */
+  --hdr-bg: #0d0d0d;
+  /* Neutrals */
+  --ink:   #0a0a0a; --ink-2: #3c3c3c; --ink-3: #717171; --ink-4: #a0a0a0; --ink-5: #d8d8d8;
+  --paper: #f4f4f4; --surface: #ffffff; --border: #ebebeb; --border-2: #d4d4d4;
+  /* Status */
+  --red: #e53535; --red-lt: #fff0f0;
+  --amber: #b05c00; --amber-lt: #fff8f0;
+  --blue: #1350c8; --blue-lt: #eef2ff;
+  --purple: #6830c0; --purple-lt: #f4f0ff;
+  --teal: #0a7070; --teal-lt: #edfafa;
+  /* Layout */
+  --hdr-h: 44px;
+  --strip-w: 56px;
+  --sb-w: 296px;
+  --r4: 4px; --r8: 8px; --r12: 12px; --rpill: 100px;
+}
+
+html, body { height: 100%; }
+body { font-family: var(--font); background: var(--paper); color: var(--ink);
+       display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+/* ── Header ── */
+#hdr {
+  height: var(--hdr-h); background: var(--hdr-bg);
+  display: flex; align-items: center; flex-shrink: 0;
+  border-bottom: 1px solid #1c1c1c; z-index: 100;
+}
+.hdr-brand {
+  width: var(--strip-w); height: var(--hdr-h);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; border-right: 1px solid #1c1c1c;
+}
+.at-logo { display: block; }
+.hdr-nav {
+  display: flex; align-items: center; height: 100%;
+  padding: 0 4px; gap: 0; flex: 1;
+}
+.hn {
+  height: 100%; display: flex; align-items: center;
+  padding: 0 13px; font-size: 13px; font-weight: 500;
+  color: #6a6a6a; text-decoration: none; cursor: default;
+  border-bottom: 2px solid transparent;
+  transition: color .15s;
+  white-space: nowrap;
+}
+.hn:hover { color: #ccc; }
+.hn.on { color: #fff; border-bottom-color: var(--at-green); font-weight: 600; }
+.hdr-right {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 14px; flex-shrink: 0;
+}
+/* Alert count badge */
+.hdr-count-pill {
+  display: flex; align-items: center; gap: 7px;
+  background: #1a1a1a; border: 1px solid #2e2e2e;
+  border-radius: var(--rpill); padding: 5px 12px 5px 10px;
+  cursor: default;
+}
+.hcp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--at-green); flex-shrink: 0; }
+.hcp-num {
+  font-size: 15px; font-weight: 700; color: var(--at-green);
+  line-height: 1; min-width: 14px; text-align: center;
+}
+.hcp-lbl { font-size: 11px; font-weight: 500; color: #666; letter-spacing: .01em; }
+/* Avatar */
+.hdr-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: #2e2e2e; display: flex; align-items: center; justify-content: center;
+  color: #888; flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='15' fill='%232e2e2e'/%3E%3Ccircle cx='15' cy='12' r='5' fill='%23555'/%3E%3Cellipse cx='15' cy='26' rx='9' ry='6' fill='%23555'/%3E%3C/svg%3E");
+  background-size: cover;
+}
+
+/* ── Layout ── */
+#layout { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Left icon strip ── */
+#icon-strip {
+  width: var(--strip-w); flex-shrink: 0;
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 12px; gap: 2px;
+}
+.is-btn {
+  width: 44px; display: flex; flex-direction: column; align-items: center;
+  gap: 4px; padding: 8px 4px 7px; border-radius: var(--r8);
+  border: none; background: none; cursor: pointer;
+  color: var(--ink-4); transition: background .12s, color .12s;
+}
+.is-btn:hover { background: var(--paper); color: var(--ink-3); }
+.is-btn.on { background: var(--at-green-lt); color: var(--at-green); }
+.is-btn span { font-size: 9px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
+
+/* ── Sidebar ── */
+#sb {
+  width: var(--sb-w); flex-shrink: 0;
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.sb-head {
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sb-back {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 500; color: var(--ink-4);
+  margin-bottom: 8px; cursor: default;
+}
+.sb-title { font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -.3px; }
+
+/* Tabs */
+#vtabs {
+  display: flex; padding: 10px 14px 0; gap: 6px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.vtab {
+  padding: 6px 14px 9px; font-size: 12px; font-weight: 600;
+  font-family: var(--font); color: var(--ink-4);
+  background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; transition: color .15s, border-color .15s;
+}
+.vtab.on { color: var(--ink); border-bottom-color: var(--ink); }
+
+/* Controls */
+#ctrls { padding: 12px 14px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+#search {
+  width: 100%; padding: 8px 12px 8px 34px;
+  border: 1.5px solid var(--border); border-radius: var(--rpill);
+  background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 11px center;
+  color: var(--ink); font-size: 13px; font-family: var(--font);
+  outline: none; margin-bottom: 10px; transition: border-color .15s;
+}
+#search:focus { border-color: var(--at-green); background-color: var(--surface); }
+#search::placeholder { color: var(--ink-4); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  padding: 4px 10px; border-radius: var(--rpill);
+  border: 1px solid var(--border); background: none;
+  color: var(--ink-3); font-size: 11px; font-weight: 500;
+  font-family: var(--font); cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.chip:hover { border-color: var(--at-green); color: var(--at-green); }
+.chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* Filter groups */
+.fgroup { margin-bottom: 9px; }
+.fgroup:last-child { margin-bottom: 0; }
+.fgroup-label {
+  font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-4); margin-bottom: 5px; display: block;
+}
+
+/* Sources panel */
+#sources-panel { flex:1; overflow-y:auto; display:none; }
+#sources-panel::-webkit-scrollbar { width:4px; }
+#sources-panel::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:2px; }
+.src-group-hdr {
+  padding: 7px 14px 5px; font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--ink-4); background: var(--paper);
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2;
+}
+.src-row {
+  display: flex; align-items: center; gap: 9px; padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.src-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.src-dot.ok    { background: var(--at-green); }
+.src-dot.empty { background: var(--amber); }
+.src-dot.error { background: var(--red); }
+.src-dot.loading { background: var(--ink-5); animation: dot-pulse 1.2s ease-in-out infinite; }
+@keyframes dot-pulse { 0%,100%{opacity:1} 50%{opacity:.2} }
+.src-name { font-size: 12px; font-weight: 500; color: var(--ink); flex:1; min-width:0;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.src-count { font-size: 11px; font-weight: 600; color: var(--ink-4); flex-shrink:0; }
+
+/* Count bar */
+#count-bar {
+  padding: 8px 14px; font-size: 11px; font-weight: 600;
+  color: var(--ink-4); border-bottom: 1px solid var(--border);
+  flex-shrink: 0; letter-spacing: .03em;
+}
+
+/* Alert list */
+#alist { flex: 1; overflow-y: auto; }
+#alist::-webkit-scrollbar { width: 4px; }
+#alist::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+/* Cards */
+.card {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .1s; border-left: 2.5px solid transparent;
+}
+.card:hover { background: var(--paper); }
+.card.on { background: var(--at-green-lt); border-left-color: var(--at-green); }
+.card-icon {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--paper); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+  color: var(--ink-4);
+}
+.card.on .card-icon { background: var(--at-green-lt); border-color: var(--at-green-md); color: var(--at-green); }
+.card-body { flex: 1; min-width: 0; }
+.card-chips { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; flex-wrap: wrap; }
+.card-name  { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.35;
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-sub   { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.card-reason{ font-size: 11px; color: var(--ink-4); font-style: italic; margin-top: 3px;
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Badges */
+.b { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px;
+     border-radius: var(--r4); font-size: 10px; font-weight: 700;
+     letter-spacing: .04em; text-transform: uppercase; }
+.b::before { content:''; display:block; width:5px; height:5px; border-radius:50%; }
+.b-open    { color:var(--at-green); background:var(--at-green-lt); } .b-open::before   { background:var(--at-green); }
+.b-closed  { color:var(--red);      background:var(--red-lt);      } .b-closed::before { background:var(--red); }
+.b-north   { color:var(--blue);     background:var(--blue-lt);     } .b-north::before  { background:var(--blue); }
+.b-south   { color:var(--amber);    background:var(--amber-lt);    } .b-south::before  { background:var(--amber); }
+.b-east    { color:var(--purple);   background:var(--purple-lt);   } .b-east::before   { background:var(--purple); }
+.b-west    { color:var(--teal);     background:var(--teal-lt);     } .b-west::before   { background:var(--teal); }
+.b-other   { color:var(--ink-3);    background:var(--paper);       } .b-other::before  { background:var(--ink-5); }
+.b-added   { color:var(--at-green); background:var(--at-green-lt); } .b-added::before  { background:var(--at-green); }
+.b-notadd  { color:var(--amber);    background:var(--amber-lt);    } .b-notadd::before { background:var(--amber); }
+
+/* Empty / error */
+.empty { display:flex; flex-direction:column; align-items:center; justify-content:center;
+         padding:48px 24px; text-align:center; color:var(--ink-4); gap:10px; font-size:13px; }
+.empty svg { opacity:.2; }
+.empty code { background:var(--border); padding:2px 6px; border-radius:var(--r4);
+              font-size:11px; color:var(--ink-3); }
+
+/* ── Detail pane ── */
+#detail { flex:1; overflow-y:auto; display:flex; flex-direction:column; background:var(--paper); }
+#detail::-webkit-scrollbar { width:4px; }
+#detail::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:2px; }
+
+#d-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--ink-5); gap:12px; }
+#d-empty svg { opacity:.2; }
+#d-empty p { font-size:13px; font-weight:500; color:var(--ink-4); }
+#d-body { flex:1; padding:24px 28px; display:none; flex-direction:column; gap:20px; }
+#d-body.on { display:flex; }
+#d-title { font-size:17px; font-weight:700; color:var(--ink); line-height:1.4; letter-spacing:-.2px; }
+
+/* Meta block */
+.meta-block { background:var(--surface); border:1px solid var(--border); border-radius:var(--r12); display:grid; grid-template-columns:1fr 1fr; }
+.mi { padding:12px 16px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); }
+.mi:nth-child(2n) { border-right:none; }
+.mi:nth-child(n+3) { border-bottom:none; }
+.mi-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-4); margin-bottom:5px; }
+.mi-value { font-size:13px; font-weight:600; color:var(--ink); }
+.mi-note  { font-size:10px; color:var(--ink-4); font-style:italic; margin-top:2px; }
+
+/* Content */
+.content-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--r12);
+               padding:16px; font-size:13px; line-height:1.75; color:var(--ink-2);
+               white-space:pre-wrap; word-break:break-word; }
+
+/* View source */
+#d-link { display:none; align-items:center; gap:7px; align-self:flex-start;
+          padding:8px 14px; border:1.5px solid var(--at-green-md); border-radius:var(--r8);
+          background:var(--at-green-lt); color:var(--at-green); font-size:12px; font-weight:600;
+          font-family:var(--font); text-decoration:none; transition:opacity .15s; }
+#d-link:hover { opacity:.8; }
+
+/* Map */
+#map-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--r12);
+            overflow:hidden; height:260px; position:relative; flex-shrink:0; }
+#map-el   { width:100%; height:100%; }
+#map-spin { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+            background:var(--surface); z-index:900; }
+
+/* Action bar */
+#abar { background:var(--surface); border-top:1px solid var(--border); padding:11px 16px;
+        display:none; gap:8px; flex-wrap:wrap; flex-shrink:0; }
+#abar.on { display:flex; }
+.abtn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:var(--rpill);
+        border:1.5px solid var(--border-2); background:var(--surface); color:var(--ink-2);
+        font-size:12px; font-weight:600; font-family:var(--font); cursor:pointer;
+        transition:background .1s, border-color .1s, color .1s; white-space:nowrap; }
+.abtn:hover { background:var(--paper); border-color:var(--ink-4); }
+.abtn.primary { background:var(--ink); border-color:var(--ink); color:#fff; border-radius:var(--rpill); }
+.abtn.primary:hover { opacity:.85; }
+.abtn.copied  { background:var(--at-green-lt); border-color:var(--at-green); color:var(--at-green); }
+
+/* Modal */
+#rev-ov { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:2000;
+          align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+#rev-ov.on { display:flex; }
+#rev-modal { background:var(--surface); border:1px solid var(--border); border-radius:var(--r12);
+             padding:22px 22px 18px; width:340px; box-shadow:0 12px 40px rgba(0,0,0,.18);
+             display:flex; flex-direction:column; gap:16px; }
+#rev-modal h3 { font-size:14px; font-weight:700; color:var(--ink); }
+.rchoices { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.rc { padding:11px; border-radius:var(--r8); border:1.5px solid var(--border);
+      background:none; font-size:12px; font-weight:600; font-family:var(--font);
+      cursor:pointer; color:var(--ink-2); transition:border-color .15s, background .15s, color .15s; text-align:center; }
+.rc:hover { border-color:var(--ink-4); }
+.rc.pick-add { border-color:var(--at-green);  background:var(--at-green-lt);  color:var(--at-green); }
+.rc.pick-no  { border-color:var(--amber);  background:var(--amber-lt);  color:var(--amber); }
+#why-wrap { display:none; flex-direction:column; gap:6px; }
+#why-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-3); }
+#why-txt { width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--r8);
+           background:var(--paper); color:var(--ink); font-size:13px; font-family:var(--font);
+           resize:vertical; min-height:72px; outline:none; transition:border-color .15s; }
+#why-txt:focus { border-color:var(--at-green); }
+.raction { display:flex; gap:8px; justify-content:flex-end; }
+.raction button { padding:7px 16px; border-radius:var(--rpill); font-size:12px; font-weight:600;
+                  font-family:var(--font); cursor:pointer; border:1.5px solid var(--border);
+                  background:none; color:var(--ink-2); }
+#rev-save { background:var(--ink); border-color:var(--ink); color:#fff; }
+#rev-save:disabled { opacity:.35; cursor:not-allowed; }
+
+/* Spinner */
+.spin { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--at-green);
+        border-radius:50%; animation:rot .7s linear infinite; }
+@keyframes rot { to { transform:rotate(360deg); } }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink:#f0f0f0; --ink-2:#c0c0c0; --ink-3:#888; --ink-4:#555; --ink-5:#333;
+    --paper:#111; --surface:#1a1a1a; --border:#2a2a2a; --border-2:#3a3a3a;
+    --at-green:#3ecf6e; --at-green-lt:#071a0e; --at-green-md:#0f3020;
+    --red:#f87171; --red-lt:#1e0909;
+    --amber:#fbbf24; --amber-lt:#1e1000;
+    --blue:#6ea6ff; --blue-lt:#0a1030;
+    --purple:#b48aff; --purple-lt:#1a0e30;
+    --teal:#2de0e0; --teal-lt:#081818;
+  }
+}
+
+@media (max-width:720px) {
+  body { overflow:auto; height:auto; }
+  #icon-strip { display:none; }
+  #layout { flex-direction:column; overflow:visible; }
+  #sb { width:100%; border-right:none; border-bottom:1px solid var(--border); max-height:55vh; }
+  #detail { min-height:60vh; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── AllTrails internal tool header ── -->
+<header id="hdr">
+  <div class="hdr-brand">
+    <!-- AllTrails mountain mark -->
+    <svg class="at-logo" width="26" height="26" viewBox="0 0 26 26" fill="none" aria-label="AllTrails">
+      <path d="M13 3L25 23H1L13 3Z" fill="#3ecf6e"/>
+      <path d="M13 11L18 23H8L13 11Z" fill="#0d0d0d"/>
+    </svg>
+  </div>
+  <nav class="hdr-nav">
+    <span class="hn">Tools</span>
+    <span class="hn">Search</span>
+    <span class="hn">Guides</span>
+    <span class="hn">Geo Contribute</span>
+    <span class="hn on">Alert Hub</span>
+    <span class="hn">PLP Admin</span>
+  </nav>
+  <div class="hdr-right">
+    <div class="hdr-count-pill" title="Unreviewed alerts">
+      <span class="hcp-dot"></span>
+      <span class="hcp-num" id="hdr-count">—</span>
+      <span class="hcp-lbl">alerts for review</span>
+    </div>
+    <div class="hdr-avatar" title="User"></div>
+  </div>
+</header>
+
+<div id="layout">
+
+  <!-- ── Left icon strip ── -->
+  <div id="icon-strip">
+    <button class="is-btn on" title="Alert Hub">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+      </svg>
+      <span>Alerts</span>
+    </button>
+  </div>
+
+  <!-- ── Sidebar ── -->
+  <aside id="sb">
+    <div class="sb-head">
+      <div class="sb-back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back
+      </div>
+      <h2 class="sb-title">Alert Hub</h2>
+    </div>
+
+    <div id="vtabs">
+      <button class="vtab on" data-view="active">Active</button>
+      <button class="vtab" data-view="reviewed">Reviewed</button>
+      <button class="vtab" data-view="sources">Sources</button>
+    </div>
+
+    <div id="ctrls">
+      <input id="search" type="text" placeholder="Search trail, state, title…" autocomplete="off" spellcheck="false">
+
+      <div class="fgroup">
+        <span class="fgroup-label">Status</span>
+        <div class="chips" id="chips-status">
+          <button class="chip on" data-f="all">All</button>
+          <button class="chip" data-f="closed">Closed</button>
+          <button class="chip" data-f="open">Open</button>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <span class="fgroup-label">Region</span>
+        <div class="chips" id="chips-region">
+          <button class="chip on" data-r="all">All</button>
+          <button class="chip" data-r="north">North</button>
+          <button class="chip" data-r="south">South</button>
+          <button class="chip" data-r="east">East</button>
+          <button class="chip" data-r="west">West</button>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <span class="fgroup-label">Source</span>
+        <div class="chips" id="chips-src">
+          <button class="chip on" data-s="all">All</button>
+          <button class="chip" data-s="google">Google Alerts</button>
+          <button class="chip" data-s="nps">NPS</button>
+          <button class="chip" data-s="scraped">Scraped</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="count-bar">Loading…</div>
+    <div id="alist">
+      <div class="empty"><div class="spin"></div><p>Fetching feeds…</p></div>
+    </div>
+    <div id="sources-panel"></div>
+  </aside>
+
+  <!-- ── Detail pane ── -->
+  <main id="detail">
+    <div id="d-empty">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 13l4.553 2.276A1 1 0 0021 21.382V10.618a1 1 0 00-.553-.894L15 7m0 13V7m0 0L9 4"/>
+      </svg>
+      <p>Select an alert to review</p>
+    </div>
+    <div id="d-body">
+      <div id="d-title"></div>
+      <div class="meta-block">
+        <div class="mi"><div class="mi-label">Trail</div><div class="mi-value" id="m-trail">—</div></div>
+        <div class="mi"><div class="mi-label">State</div><div class="mi-value" id="m-state">—</div><div class="mi-note" id="m-state-note"></div></div>
+        <div class="mi"><div class="mi-label">Region</div><div class="mi-value" id="m-region">—</div></div>
+        <div class="mi"><div class="mi-label">RSS Feed</div><div class="mi-value" id="m-feed">—</div></div>
+      </div>
+      <div class="content-box" id="d-content"></div>
+      <a id="d-link" href="#" target="_blank" rel="noopener">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        View source article
+      </a>
+      <div id="map-wrap">
+        <div id="map-spin"><div class="spin"></div></div>
+        <div id="map-el"></div>
+      </div>
+    </div>
+    <div id="abar">
+      <button class="abtn primary" id="btn-geo">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Open in GeoContribute
+      </button>
+      <button class="abtn" id="btn-copy">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copy location
+      </button>
+      <button class="abtn" id="btn-rev">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark as reviewed
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ── Review modal ── -->
+<div id="rev-ov">
+  <div id="rev-modal">
+    <h3>How was this alert handled?</h3>
+    <div class="rchoices">
+      <button class="rc" id="rc-add">✓ Alert added</button>
+      <button class="rc" id="rc-no">✗ Alert not added</button>
+    </div>
+    <div id="why-wrap">
+      <div id="why-label">Why not?</div>
+      <textarea id="why-txt" placeholder="e.g. No active trail, closure already applied, not actionable…"></textarea>
+    </div>
+    <div class="raction">
+      <button id="rev-cancel">Cancel</button>
+      <button id="rev-save" disabled>Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ── Feed registry ────────────────────────────────────────────────────────────
+ *  Each entry: { url, kw, name, group, type }
+ *  kw is the internal tag used for source filtering and status inference.
+ *  To add a Google Alert: create alert at google.com/alerts → RSS feed → paste URL below.
+ * ─────────────────────────────────────────────────────────────────────────── */
+const NPS_PARK_NAMES = {
+  yose:'Yosemite NP',grca:'Grand Canyon NP',yell:'Yellowstone NP',
+  grsm:'Great Smoky Mountains NP',zion:'Zion NP',olym:'Olympic NP',
+  romo:'Rocky Mountain NP',shen:'Shenandoah NP',jotr:'Joshua Tree NP',
+  acad:'Acadia NP',glac:'Glacier NP',grte:'Grand Teton NP',
+  sequ:'Sequoia NP',brca:'Bryce Canyon NP',arch:'Arches NP',
+  cany:'Canyonlands NP',mora:'Mount Rainier NP',crla:'Crater Lake NP',
+  care:'Capitol Reef NP',deva:'Death Valley NP',lavo:'Lassen Volcanic NP',
+  redw:'Redwood NP',badl:'Badlands NP',grba:'Great Basin NP',whsa:'White Sands NM',
+};
+
+const FEED_META = [
+  // ── Google Alerts ── (add more queries at google.com/alerts → RSS)
+  { url:'https://www.google.com/alerts/feeds/07103569879278957841/13701361101803080406', kw:'Closed', name:'"trail closed" alert',   group:'Google Alerts' },
+  { url:'https://www.google.com/alerts/feeds/07103569879278957841/422314718354908859',  kw:'Open',   name:'"trail open" alert',     group:'Google Alerts' },
+  // ADD MORE GOOGLE ALERTS BELOW — paste the RSS feed URL from your Google Alerts settings:
+  // { url:'https://www.google.com/alerts/feeds/YOUR_ID/ALERT_ID', kw:'Closed', name:'"trailhead closed" alert', group:'Google Alerts' },
+  // { url:'https://www.google.com/alerts/feeds/YOUR_ID/ALERT_ID', kw:'Closed', name:'"state park closed" alert', group:'Google Alerts' },
+  // { url:'https://www.google.com/alerts/feeds/YOUR_ID/ALERT_ID', kw:'Closed', name:'"campground closed" alert', group:'Google Alerts' },
+  // { url:'https://www.google.com/alerts/feeds/YOUR_ID/ALERT_ID', kw:'Open',   name:'"trailhead reopened" alert', group:'Google Alerts' },
+
+  // ── National Park Service RSS feeds ──
+  ...Object.entries(NPS_PARK_NAMES).map(([code, name]) => ({
+    url:   `https://www.nps.gov/feeds/getNewsRSS.htm?id=${code}`,
+    kw:    'NPS',
+    name,
+    group: 'National Park Service',
+  })),
+
+  // ── State Parks & Forests (scraped by scraper.py → served at /scraped-alerts) ──
+  // These appear as 'Scraped' kw items from the /scraped-alerts endpoint.
+];
+
+// Simple array for fetch loop
+const FEEDS = FEED_META.filter(f => f.url);
+
+// Per-feed load stats (populated during init, used by Sources tab)
+const feedStats = FEED_META.map(f => ({ ...f, status:'loading', count:0 }));
+
+// Google Sheet source stat (tracked separately)
+const SHEET_STAT = { name:'Trail Closures spreadsheet (RSS feed tab)', group:'Google Alerts', status:'loading', count:0 };
+
+/* ── Storage ── */
+const RKEY = 'at-alert-hub-v3';
+let rdata = JSON.parse(localStorage.getItem(RKEY) || '{}');
+const saveR = () => localStorage.setItem(RKEY, JSON.stringify(rdata));
+
+/* ── App state ── */
+let ALL = [], filtered = [], selIdx = -1, view = 'active', filt = 'all', region = 'all', src = 'all', q = '';
+let mapInst = null, mapMk = null, mapCir = null;
+const geoCache = {};
+let scrapedSources = []; // populated from /scraped-alerts metadata
+
+/* ── DOM ── */
+const $ = id => document.getElementById(id);
+const alist = $('alist'), countBar = $('count-bar'), hdrCount = $('hdr-count');
+const srcPanel = $('sources-panel'), ctrls = $('ctrls');
+const dEmpty = $('d-empty'), dBody = $('d-body'), abar = $('abar');
+const dTitle = $('d-title'), mTrail = $('m-trail'), mState = $('m-state');
+const mStateNote = $('m-state-note'), mRegion = $('m-region'), mFeed = $('m-feed');
+const dContent = $('d-content'), dLink = $('d-link');
+const mapWrap = $('map-wrap'), mapEl = $('map-el'), mapSpin = $('map-spin');
+const btnGeo = $('btn-geo'), btnCopy = $('btn-copy'), btnRev = $('btn-rev');
+const revOv = $('rev-ov'), rcAdd = $('rc-add'), rcNo = $('rc-no');
+const whyWrap = $('why-wrap'), whyTxt = $('why-txt');
+const revSave = $('rev-save'), revCancel = $('rev-cancel');
+
+/* ── State → Region ── */
+const ST_REGION = {
+  'Maine':'East','New Hampshire':'East','Vermont':'East','Massachusetts':'East','Rhode Island':'East',
+  'Connecticut':'East','New York':'East','New Jersey':'East','Pennsylvania':'East',
+  'Delaware':'East','Maryland':'East','Virginia':'East','West Virginia':'East',
+  'North Carolina':'South','South Carolina':'South','Georgia':'South','Florida':'South',
+  'Alabama':'South','Mississippi':'South','Tennessee':'South','Kentucky':'South',
+  'Arkansas':'South','Louisiana':'South','Texas':'South','Oklahoma':'South','Missouri':'South',
+  'Ohio':'North','Indiana':'North','Illinois':'North','Michigan':'North','Wisconsin':'North',
+  'Minnesota':'North','Iowa':'North','Kansas':'North','Nebraska':'North',
+  'South Dakota':'North','North Dakota':'North','Colorado':'North','Utah':'North',
+  'Wyoming':'North','Montana':'North','Idaho':'North',
+  'California':'West','Oregon':'West','Washington':'West','Nevada':'West',
+  'Arizona':'West','New Mexico':'West','Hawaii':'West','Alaska':'West'
+};
+
+const STATES = Object.keys(ST_REGION).sort((a,b) => b.length - a.length);
+
+/* ── Noise filters ── */
+const OUTDOOR_RE = /\b(trail|trailhead|hiking|hike|hikers?|mountain\s*bik|bike\s*(trail|path|route|lane)|cycling\s*(path|route)|greenway|riverwalk|boardwalk|campground|camping|national\s*park|state\s*park|county\s*park|city\s*park|regional\s*park|national\s*forest|state\s*forest|wilderness|preserve|recreation\s*area|nature\s*(trail|center|park|area)|park\s*trail|loop\s*trail|footpath|carriage\s*road|fire\s*(closure|restriction|area)|wildfire|prescribed\s*(burn|fire)|backcountry)\b/i;
+
+const NOISE_RE = /\bdisney\b|big\s*thunder\s*mountain\s*railroad|pig\s*trail\s*nation|\b(nfl|mlb|nba|nhl|lpga|pga\s+tour)\b|\bgolfer\b|golf\s*(course|champion|tournament)|testifies?|confessed?|\bmurder\b|\bkilling\b|saudi\s*arabia|bahrain|iranian\s*threat|\beconomic\s*impact\b|stock\s*market|\brestaurant\b|\bcasino\b|\bairport\b|\bstadium\b|anwa\s*champ|wildlife\s*(corridor|comeback|recovery|return|popul|herd|nest|spawn|migrat|biolog|conserv|restor|reboun|survey|count|monitor)|visitor\s*(record|number|statistic|center|program|award|service)|science\s*(feature|brief|update|discovery)|press\s*release|public\s*(comment|meeting|hearing)|budget|appropriat|superintendent\s*named|new\s*(superintendent|director|ranger)|partnership|volunteer|donation|grant\s*award|fee\s*(change|increase|waiv)|permit\s*lottery|scholarship|internship|job\s*opening|hiring|employment/i;
+
+/* NPS / scraped items include general press releases — additionally require a closure/access keyword */
+const CLOSURE_RE = /\b(clos(ed?|ure|ing)|reopen(ed?|s|ing)?|restrict(ed|ion|ing)?|access\s+(limited|closed|restricted|open|impacted)|trail\s+(condition|surface|damage|repair|closed)|road\s+(clos|condition|repair|damage)|permit\s+required|danger(ous)?|emergency|wildfire|prescribed\s*(fire|burn)|flood(ed|ing)?|washout|impassable|damage[d]?|temporarily\s+(clos|unavail|shut)|hazard(ous)?|warning|fire\s+(restriction|danger|closure|area)|alert|safety\s+closure|seasonal\s+closure|winter\s+closure)\b/i;
+
+function isRelevant(a) {
+  if (a.source === 'Google Sheet') return true; // team-curated, skip noise filters
+  const txt = [a.trailName, a.title, a.content].join(' ');
+  if (NOISE_RE.test(txt)) return false;
+  if (!OUTDOOR_RE.test(txt)) return false;
+  // NPS press releases cover wildlife/events/fees — only keep closure/danger items
+  const kw = norm(a.keyword);
+  if (kw === 'nps' || kw === 'scraped') return CLOSURE_RE.test(txt);
+  return true;
+}
+
+/* ── Helpers ── */
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function norm(s){ return (s||'').toLowerCase(); }
+
+function fmtDate(d){
+  if (!d) return '';
+  try { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+  catch(_){ return d; }
+}
+
+function htmlText(s){
+  const d = document.createElement('div');
+  d.innerHTML = s;
+  return (d.textContent||'').replace(/\s+/g,' ').trim();
+}
+
+function extractTrail(title, content){
+  // Each word in a place name: a capital-letter word (letters, hyphens, apostrophes only).
+  // Limiting each word to [A-Z][A-Za-z'-]+ prevents the old bug where the regex
+  // would slurp up the entire article headline before stopping at "National Park".
+  const W  = '[A-Z][A-Za-z\'-]{1,22}'; // one title-case word
+  const WS = `(?:${W}\\s+)`;           // title-case word + space
+
+  // Priority 1 — specific named trail / trailhead / path
+  const TRAIL_RE = new RegExp(`\\b(${WS}{0,5}${W}\\s+(?:Trail|Trailhead|Greenway|Riverwalk|Boardwalk|Footpath|Rail\\s+Trail|Bike\\s+Path))\\b`);
+
+  // Priority 2 — named park / forest / wilderness
+  // Negative lookahead on each word prevents "National" from being eaten as a name word
+  const NW  = `(?!National\\b|State\\b|County\\b|City\\b|Regional\\b|Recreation\\b|Nature\\b)${W}`;
+  const PARK_RE = new RegExp(`\\b((?:${NW}\\s+){1,5}(?:National\\s+(?:Park|Forest|Monument|Recreation\\s+Area|Seashore|Lakeshore|Grassland|Battlefield|Parkway)|State\\s+(?:Park|Forest|Beach|Recreation\\s+Area)|County\\s+(?:Park|Forest)|Regional\\s+Park|Wilderness(?:\\s+Area)?|Nature\\s+Preserve|Conservation\\s+Area|Recreation\\s+Area))\\b`);
+
+  // Priority 3 — named campground
+  const CAMP_RE = new RegExp(`\\b(${WS}{0,4}${W}\\s+Campground)\\b`);
+
+  // Priority 4 — geographic feature name
+  const GEO_RE = new RegExp(`\\b(${WS}{0,4}${W}\\s+(?:Canyon|Valley|Meadow|Basin|Ridge|Peak|Mountain|Lake|Creek|Falls|Pass|Gorge|Butte|Mesa|Dunes|Reservoir))\\b`);
+
+  for (const re of [TRAIL_RE, PARK_RE, CAMP_RE, GEO_RE]) {
+    for (const src of [title, content]) {
+      const m = re.exec(src);
+      if (m) return m[1].trim().replace(/\s+/g,' ').substring(0,80);
+    }
+  }
+
+  // Priority 5 — extract location after "in" / "at" / "near" in the title
+  const IN_RE = /\b(?:in|at|near)\s+([A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){0,4})\b/;
+  const mIn = IN_RE.exec(title);
+  if (mIn && mIn[1].length > 4) return mIn[1].trim().substring(0,60);
+
+  // Last resort: first sentence of title, up to first punctuation
+  return title.replace(/[.!?|–—].*$/, '').trim().substring(0,60) || title.substring(0,60);
+}
+
+function getState(a){
+  const raw = (a.state||'').trim();
+  if (raw) return {v:raw, inf:false};
+  const txt = [a.trailName,a.title,a.content].join(' ');
+  for (const s of STATES)
+    if (txt.toLowerCase().includes(s.toLowerCase())) return {v:s,inf:true};
+  return {v:'',inf:false};
+}
+
+function inferStatus(a){
+  const k = norm(a.keyword);
+  if (k==='closed'||k==='close') return 'closed';
+  if (k==='open'  ||k==='reopen') return 'open';
+  if (k==='fire') return 'closed';
+  const t = norm(a.title+' '+a.content);
+  if (/\bclosed\b|\bclosure\b|\bfire\b/.test(t)) return 'closed';
+  if (/\bopen(ed|s)?\b|\breopen/.test(t)) return 'open';
+  return '';
+}
+
+function fmtFeed(a){
+  const k = norm(a.keyword);
+  if (k==='closed'||k==='close') return 'trail closed';
+  if (k==='open'  ||k==='reopen') return 'trail open';
+  if (k==='fire') return 'fire closure';
+  if (k==='nps') return 'NPS';
+  if (k==='scraped') return a.source || 'Scraped';
+  const s = inferStatus(a);
+  return s==='closed'?'trail closed':s==='open'?'trail open':'—';
+}
+
+function regionCls(r){
+  const v = norm(r);
+  if (v.includes('north')) return 'north';
+  if (v.includes('south')) return 'south';
+  if (v.includes('east'))  return 'east';
+  if (v.includes('west'))  return 'west';
+  return 'other';
+}
+function badge(cls,lbl){ return `<span class="b b-${cls}">${lbl}</span>`; }
+
+/* ── Card icon SVG by status ── */
+function cardIconSvg(status){
+  if (status==='closed')
+    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+  if (status==='open')
+    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>';
+  return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>';
+}
+
+/* ── Fetch + parse ── */
+async function fetchFeed(feedEntry){
+  const { url, kw } = feedEntry;
+  const statEntry = feedStats.find(s => s.url === url);
+
+  async function tryFetch(label, fetchFn) {
+    try {
+      const r = await fetchFn();
+      if (r.ok) {
+        const text = await r.text();
+        const items = parseFeed(text, kw);
+        console.log(`[feed] ${label} OK "${kw}" (${url.split('/')[2]}): ${items.length} entries`);
+        if (statEntry) { statEntry.status = 'ok'; statEntry.count = items.length; }
+        return items;
+      }
+      console.warn(`[feed] ${label} HTTP ${r.status} for "${kw}" — ${url.split('/')[2]}`);
+      if (statEntry) statEntry.errorCode = r.status;
+    } catch(e) { console.warn(`[feed] ${label} error "${kw}":`, e.message); }
+    return null;
+  }
+
+  // 1. Local proxy (required for Google Alerts; also works for NPS)
+  const proxyResult = await tryFetch('proxy', () => fetch('/feed?url=' + encodeURIComponent(url)));
+  if (proxyResult) return proxyResult;
+
+  // 2. Direct fetch (NPS allows CORS)
+  const directResult = await tryFetch('direct', () => fetch(url));
+  if (directResult) return directResult;
+
+  if (statEntry) statEntry.status = 'error';
+  return [];
+}
+
+/* Auto-detects Atom vs RSS 2.0 and dispatches to the right parser */
+function parseFeed(xml, kw){
+  const doc  = new DOMParser().parseFromString(xml, 'application/xml');
+  const root = doc.documentElement;
+  // Atom: root tag is <feed>; RSS: root is <rss> or <channel>
+  const isAtom = root.localName === 'feed'
+              || doc.getElementsByTagNameNS('http://www.w3.org/2005/Atom','entry').length > 0;
+  return isAtom ? parseAtom(doc, kw) : parseRSS(doc, kw);
+}
+
+/* Atom parser — Google Alerts format */
+function parseAtom(doc, kw){
+  const ns = 'http://www.w3.org/2005/Atom';
+  function gns(p,tag){ return p.getElementsByTagNameNS(ns,tag)[0]||p.getElementsByTagName(tag)[0]||null; }
+  const list    = doc.getElementsByTagNameNS(ns,'entry');
+  const entries = Array.from(list.length ? list : doc.getElementsByTagName('entry'));
+  return entries.map((e,i) => {
+    const id      = gns(e,'id')?.textContent || ('atom-'+kw+'-'+i);
+    const title   = htmlText(gns(e,'title')?.textContent||'');
+    const linkEl  = e.getElementsByTagNameNS(ns,'link')[0]||e.getElementsByTagName('link')[0]||null;
+    const link    = linkEl?.getAttribute('href')||'';
+    const date    = gns(e,'published')?.textContent||gns(e,'updated')?.textContent||'';
+    const raw     = gns(e,'content')?.textContent||gns(e,'summary')?.textContent||'';
+    const content = htmlText(raw);
+    const trailName = extractTrail(title, content);
+    return { id, date, region:'', state:'', trailName, content, title, link, keyword:kw, actionable:'', actionReason:'' };
+  });
+}
+
+/* RSS 2.0 parser — NPS / InciWeb format */
+function parseRSS(doc, kw){
+  const items = Array.from(doc.getElementsByTagName('item'));
+  return items.map((item,i) => {
+    const id      = item.getElementsByTagName('guid')[0]?.textContent
+                 || item.getElementsByTagName('link')[0]?.textContent
+                 || ('rss-'+kw+'-'+i);
+    const title   = htmlText(item.getElementsByTagName('title')[0]?.textContent||'');
+    // RSS <link> is a text node (not an attribute), siblings of <title>
+    const link    = item.getElementsByTagName('link')[0]?.textContent||'';
+    const date    = item.getElementsByTagName('pubDate')[0]?.textContent||'';
+    const raw     = item.getElementsByTagName('description')[0]?.textContent
+                 || item.getElementsByTagName('content:encoded')[0]?.textContent||'';
+    const content = htmlText(raw);
+    const trailName = extractTrail(title, content);
+    return { id, date, region:'', state:'', trailName, content, title, link, keyword:kw, actionable:'', actionReason:'' };
+  });
+}
+
+/* ── Google Sheet CSV helpers ────────────────────────────────────────────── */
+
+/* Minimal RFC-4180 CSV parser — handles quoted fields with embedded commas/newlines */
+function parseCSV(text) {
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c==='"' && text[i+1]==='"') { f+='"'; i++; }
+      else if (c==='"') { q=false; }
+      else f+=c;
+    } else {
+      if (c==='"') { q=true; }
+      else if (c===',') { row.push(f); f=''; }
+      else if (c==='\n'||c==='\r') {
+        row.push(f); f='';
+        if (row.some(x=>x.trim())) rows.push(row);
+        row=[];
+        if (c==='\r'&&text[i+1]==='\n') i++;
+      } else f+=c;
+    }
+  }
+  if (f||row.length) { row.push(f); if (row.some(x=>x.trim())) rows.push(row); }
+  return rows;
+}
+
+/* Excel serial date (e.g. 46071.83) → ISO string; falls back to Date.parse */
+function parseSheetDate(raw) {
+  if (!raw) return '';
+  const num = parseFloat(raw);
+  if (!isNaN(num) && num > 40000 && num < 60000)
+    return new Date((num - 25569) * 86400000).toISOString();
+  const d = new Date(raw);
+  return isNaN(d) ? raw : d.toISOString();
+}
+
+/* Unwrap Google redirect URL → actual article URL */
+function extractGoogleUrl(url) {
+  if (!url) return '';
+  try {
+    if (url.includes('google.com/url?')) return new URL(url).searchParams.get('url') || url;
+  } catch(_){}
+  return url;
+}
+
+function sheetHash(s) {
+  let h = 0;
+  for (let i = 0; i < Math.min(s.length,200); i++) h = Math.imul(31,h) + s.charCodeAt(i) | 0;
+  return Math.abs(h);
+}
+
+async function fetchGoogleSheet() {
+  const CSV_URL = 'https://docs.google.com/spreadsheets/d/1owu_h2MepmrQpOIOJ4d7vtyxzNiwhP7cFmyaG1hsQR4/export?format=csv&gid=1372129223';
+  SHEET_STAT.status = 'loading';
+  try {
+    const r = await fetch(CSV_URL);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const text = await r.text();
+    const items = parseSheetItems(text);
+    SHEET_STAT.status = 'ok'; SHEET_STAT.count = items.length;
+    console.log(`[sheet] ${items.length} items from Google Sheet`);
+    return items;
+  } catch(e) {
+    console.warn('[sheet] fetch failed:', e.message);
+    SHEET_STAT.status = 'error';
+    return [];
+  }
+}
+
+function parseSheetItems(csv) {
+  const rows = parseCSV(csv);
+  if (rows.length < 2) return [];
+  const hdrs = rows[0].map(h => h.trim().toLowerCase());
+  const ci = n => hdrs.findIndex(h => h.includes(n));
+  const cD=ci('date'), cRg=ci('region'), cSt=ci('state'), cTr=ci('trail name'),
+        cCo=ci('content'), cTi=ci('title'), cLk=ci('link'),
+        cAc=ci('actionable'), cWy=ci('why');
+
+  const items = [];
+  rows.slice(1).forEach((row, i) => {
+    const rawTitle = (row[cTi]||'').replace(/<[^>]+>/g,'').trim();
+    const rawTrail = (row[cTr]||'').trim();
+    if (!rawTitle && !rawTrail) return;
+
+    const rawLink  = row[cLk]||'';
+    const link     = extractGoogleUrl(rawLink);
+    const content  = row[cCo]||'';
+    const trailName = rawTrail || extractTrail(rawTitle, content);
+    const t   = (rawTitle+' '+content).toLowerCase();
+    const kw  = /\breopen(ed|s)?\b/.test(t) ? 'Open' : 'Closed';
+    const act = (row[cAc]||'').toLowerCase().trim();
+    const why = (row[cWy]||'').trim();
+    const id  = 'sheet-' + sheetHash(rawLink||rawTitle||String(i));
+
+    // Pre-populate review state from the sheet's Actionable? column
+    // (user's own dashboard reviews always win — only set if not yet reviewed here)
+    if (!rdata[id]) {
+      if (act==='yes') rdata[id] = { outcome:'added',     reason:'',  ts:0 };
+      if (act==='no')  rdata[id] = { outcome:'not_added', reason:why, ts:0 };
+    }
+
+    items.push({
+      id, date: parseSheetDate(row[cD]||''),
+      region: row[cRg]||'', state: row[cSt]||'',
+      trailName, content, title: rawTitle, link,
+      keyword: kw, source: 'Google Sheet',
+      actionable:'', actionReason:'',
+    });
+  });
+
+  saveR(); // persist pre-populated review states
+  return items;
+}
+
+/* ── Enrich: derive region from inferred state ── */
+function enrichAll(){
+  ALL.forEach(a => {
+    if (!a.region){
+      const st = getState(a);
+      a.region = ST_REGION[st.v] || '';
+    }
+  });
+}
+
+/* ── Filter + render ── */
+const CUTOFF_MS = new Date('2026-04-01T00:00:00Z').getTime();
+function dateMs(a) { const d = new Date(a.date); return isNaN(d) ? null : d.getTime(); }
+
+const RELEVANT = () => ALL.filter(isRelevant);
+
+function applyFilters(){
+  const base = RELEVANT().filter(a => {
+    // Date cutoff — exclude items older than April 1 2026 (items with no date pass through)
+    const ms = dateMs(a);
+    if (ms !== null && ms < CUTOFF_MS) return false;
+
+    const rgn = norm(a.region);
+    const kw  = norm(a.keyword);
+
+    // Status filter
+    if (filt==='closed' && inferStatus(a)!=='closed') return false;
+    if (filt==='open'   && inferStatus(a)!=='open')   return false;
+
+    // Region filter
+    if (region==='north' && !rgn.includes('north')) return false;
+    if (region==='south' && !rgn.includes('south')) return false;
+    if (region==='east'  && !rgn.includes('east'))  return false;
+    if (region==='west'  && !rgn.includes('west'))  return false;
+
+    // Source filter
+    const isGoogle  = kw==='closed'||kw==='open';
+    const isNPS     = kw==='nps';
+    const isFire    = kw==='fire';
+    const isScraped = kw==='scraped';
+    if (src==='google'  && !isGoogle)  return false;
+    if (src==='nps'     && !isNPS)     return false;
+    if (src==='fire'    && !isFire)    return false;
+    if (src==='scraped' && !isScraped) return false;
+
+    if (q){
+      const lq = q.toLowerCase();
+      const st = getState(a).v;
+      if (![a.trailName,a.title,a.content,a.keyword,st].some(s=>norm(s).includes(lq))) return false;
+    }
+    return true;
+  });
+
+  // Sort newest first; items with no date fall to the bottom
+  base.sort((a,b) => {
+    const ma = dateMs(a), mb = dateMs(b);
+    if (ma===null && mb===null) return 0;
+    if (ma===null) return 1;
+    if (mb===null) return -1;
+    return mb - ma;
+  });
+
+  filtered = view==='active' ? base.filter(a=>!rdata[a.id]) : base.filter(a=>!!rdata[a.id]);
+  render();
+}
+
+function renderSources(){
+  const groups = {};
+  [...feedStats, SHEET_STAT].forEach(s => {
+    if (!groups[s.group]) groups[s.group] = [];
+    groups[s.group].push(s);
+  });
+  // Add scraped sources group if scraper output is loaded
+  if (scrapedSources.length) groups['Scraped (scraper.py)'] = scrapedSources;
+
+  let html = '';
+  for (const [gname, rows] of Object.entries(groups)) {
+    const total = rows.reduce((a,r)=>a+(r.count||0),0);
+    html += `<div class="src-group-hdr">${esc(gname)} <span style="font-weight:400;opacity:.6">${total} items</span></div>`;
+    rows.forEach(r => {
+      const dotCls = r.status==='ok'&&r.count>0 ? 'ok' : r.status==='ok'&&r.count===0 ? 'empty' : r.status==='error' ? 'error' : 'loading';
+      const errStr = r.errorCode ? ` (HTTP ${r.errorCode})` : '';
+      const label = r.status==='loading' ? 'loading…' : r.status==='error' ? `error${errStr}` : r.count > 0 ? `${r.count} items` : 'no items';
+      html += `<div class="src-row"><span class="src-dot ${dotCls}"></span><span class="src-name">${esc(r.name)}</span><span class="src-count">${label}</span></div>`;
+    });
+  }
+  srcPanel.innerHTML = html || '<div class="empty"><p>No sources loaded yet</p></div>';
+}
+
+function render(){
+  const active = RELEVANT().filter(a=>!rdata[a.id]).length;
+  hdrCount.textContent = active;
+
+  if (view === 'sources') {
+    ctrls.style.display  = 'none';
+    countBar.style.display = 'none';
+    alist.style.display  = 'none';
+    srcPanel.style.display = 'block';
+    renderSources();
+    return;
+  }
+  ctrls.style.display  = '';
+  countBar.style.display = '';
+  alist.style.display  = 'block';
+  srcPanel.style.display = 'none';
+
+  const n = filtered.length;
+  countBar.textContent = 'Items: ' + n;
+  if (!n){
+    alist.innerHTML = '<div class="empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>No alerts match</p></div>';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  filtered.forEach((a,i) => {
+    const div = document.createElement('div');
+    div.className = 'card'+(i===selIdx?' on':'');
+    const st = getState(a);
+    const status = inferStatus(a);
+    const rd = rdata[a.id];
+    div.innerHTML =
+      `<div class="card-icon">${cardIconSvg(status)}</div>`+
+      `<div class="card-body">`+
+        `<div class="card-chips">${status ? badge('b-'+status, status) : ''}${badge(regionCls(a.region), a.region||'?')}${rd?(rd.outcome==='added'?badge('added','Added'):badge('notadd','Not added')):''}</div>`+
+        `<div class="card-name">${esc(a.trailName||a.title||'Unnamed')}</div>`+
+        `<div class="card-sub">${esc(st.v)}${st.v&&a.date?' · ':''}${fmtDate(a.date)}</div>`+
+        (rd&&rd.reason?`<div class="card-reason">"${esc(rd.reason)}"</div>`:'') +
+      `</div>`;
+    div.addEventListener('click',()=>select(i));
+    frag.appendChild(div);
+  });
+  alist.innerHTML='';
+  alist.appendChild(frag);
+}
+
+/* ── Select alert ── */
+function select(i){
+  selIdx=i; render();
+  const a = filtered[i]; if (!a) return;
+  const st = getState(a);
+
+  dEmpty.style.display='none';
+  dBody.classList.add('on');
+  abar.classList.add('on');
+
+  dTitle.textContent     = a.title||a.trailName||'Alert';
+  mTrail.textContent     = a.trailName||'—';
+  mState.textContent     = st.v||'—';
+  mStateNote.textContent = st.inf ? 'inferred from content' : '';
+  mRegion.textContent    = a.region||'—';
+  mFeed.textContent      = fmtFeed(a);
+  dContent.textContent   = a.content||'(No content)';
+
+  if (a.link){ dLink.href=a.link; dLink.style.display='flex'; }
+  else        { dLink.style.display='none'; }
+
+  updateRevBtn(a.id);
+
+  btnGeo.onclick = () => {
+    const ck = [a.trailName,st.v,'USA'].filter(Boolean).join(', ');
+    const c  = geoCache[ck];
+    const url = c ? `https://www.alltrails.com/manage/geo-contribute?latitude=${c.lat}&longitude=${c.lng}&zoom=13`
+                  : 'https://www.alltrails.com/manage/geo-contribute';
+    window.open(url,'_blank','noopener');
+  };
+
+  btnCopy.onclick = () => {
+    const loc = [a.trailName,st.v].filter(Boolean).join(', ');
+    const orig = btnCopy.innerHTML;
+    navigator.clipboard.writeText(loc).then(()=>{
+      btnCopy.classList.add('copied');
+      btnCopy.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+      setTimeout(()=>{ btnCopy.innerHTML=orig; btnCopy.classList.remove('copied'); },1800);
+    }).catch(()=>prompt('Copy:',loc));
+  };
+
+  btnRev.onclick = ()=>openModal(a);
+  geocode(a, st.v);
+}
+
+function updateRevBtn(id){
+  btnRev.innerHTML = rdata[id]
+    ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Edit review'
+    : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Mark as reviewed';
+}
+
+function clearDetail(){
+  dEmpty.style.display='flex'; dBody.classList.remove('on'); abar.classList.remove('on');
+}
+
+/* ── Modal ── */
+let modalChoice=null;
+function openModal(a){
+  modalChoice=null;
+  rcAdd.classList.remove('pick-add'); rcNo.classList.remove('pick-no');
+  whyWrap.style.display='none'; whyTxt.value=''; revSave.disabled=true;
+  const rd=rdata[a.id];
+  if (rd){
+    modalChoice=rd.outcome;
+    if (rd.outcome==='added')     rcAdd.classList.add('pick-add');
+    if (rd.outcome==='not_added'){ rcNo.classList.add('pick-no'); whyWrap.style.display='flex'; whyTxt.value=rd.reason||''; }
+    revSave.disabled=false;
+  }
+  revOv.classList.add('on');
+  revSave.onclick=()=>saveModal(a.id);
+}
+rcAdd.addEventListener('click',()=>{ modalChoice='added'; rcAdd.classList.add('pick-add'); rcNo.classList.remove('pick-no'); whyWrap.style.display='none'; revSave.disabled=false; });
+rcNo.addEventListener('click', ()=>{ modalChoice='not_added'; rcNo.classList.add('pick-no'); rcAdd.classList.remove('pick-add'); whyWrap.style.display='flex'; revSave.disabled=false; whyTxt.focus(); });
+revCancel.addEventListener('click',()=>revOv.classList.remove('on'));
+revOv.addEventListener('click',e=>{ if(e.target===revOv) revOv.classList.remove('on'); });
+function saveModal(id){
+  if(!modalChoice) return;
+  rdata[id]={ outcome:modalChoice, reason:modalChoice==='not_added'?whyTxt.value.trim():'', ts:Date.now() };
+  saveR(); revOv.classList.remove('on'); updateRevBtn(id); applyFilters();
+}
+
+/* ── Map ── */
+async function geocode(a, resolvedState){
+  mapSpin.style.display='flex'; mapEl.style.display='block';
+  const old=mapWrap.querySelector('.map-err'); if(old) old.remove();
+  // National/State parks are uniquely named — don't append state (which may be wrong)
+  const isNamedPark = /National\s+(Park|Forest|Monument|Recreation\s+Area|Seashore|Grassland)|State\s+Park|Wilderness(?:\s+Area)?/i.test(a.trailName);
+  const key = isNamedPark
+    ? [a.trailName, 'USA'].filter(Boolean).join(', ')
+    : [a.trailName, resolvedState, 'USA'].filter(Boolean).join(', ');
+  let c=geoCache[key];
+  if (!c){
+    try {
+      const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(key)}`,{headers:{'Accept-Language':'en'}});
+      const d=await r.json();
+      if(d&&d.length){ c={lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)}; geoCache[key]=c; }
+    } catch(_){}
+  }
+  mapSpin.style.display='none';
+  if (!c){
+    mapEl.style.display='none';
+    const err=document.createElement('div');
+    err.className='map-err';
+    err.style.cssText='display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;color:var(--ink-3);padding:20px;text-align:center;';
+    err.textContent='Could not locate "'+a.trailName+'" on the map.';
+    mapWrap.appendChild(err); return;
+  }
+  mapEl.style.display='block';
+  if (!mapInst){
+    mapInst=L.map(mapEl,{zoomControl:true,attributionControl:true});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(mapInst);
+  }
+  if(mapMk)  { mapInst.removeLayer(mapMk);  mapMk=null;  }
+  if(mapCir) { mapInst.removeLayer(mapCir); mapCir=null; }
+  mapInst.setView([c.lat,c.lng],13);
+  mapMk  = L.marker([c.lat,c.lng],{title:a.trailName}).addTo(mapInst).bindPopup(`<b>${esc(a.trailName)}</b><br>${esc(resolvedState)}`).openPopup();
+  mapCir = L.circle([c.lat,c.lng],{radius:3000,color:'#3ecf6e',fillColor:'#3ecf6e',fillOpacity:.08,weight:1.5}).addTo(mapInst);
+  setTimeout(()=>mapInst.invalidateSize(),50);
+}
+
+/* ── Events ── */
+$('vtabs').addEventListener('click',e=>{
+  const t=e.target.closest('.vtab'); if(!t) return;
+  document.querySelectorAll('.vtab').forEach(v=>v.classList.remove('on'));
+  t.classList.add('on'); view=t.dataset.view; selIdx=-1; applyFilters(); clearDetail();
+});
+$('chips-status').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b||!b.dataset.f) return;
+  $('chips-status').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  b.classList.add('on'); filt=b.dataset.f; selIdx=-1; applyFilters(); clearDetail();
+});
+$('chips-region').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b||!b.dataset.r) return;
+  $('chips-region').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  b.classList.add('on'); region=b.dataset.r; selIdx=-1; applyFilters(); clearDetail();
+});
+$('chips-src').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b||!b.dataset.s) return;
+  $('chips-src').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  b.classList.add('on'); src=b.dataset.s; selIdx=-1; applyFilters(); clearDetail();
+});
+$('search').addEventListener('input',e=>{ q=e.target.value; selIdx=-1; applyFilters(); clearDetail(); });
+
+/* ── Init ── */
+(async function init(){
+  // Fetch RSS/Atom feeds AND Google Sheet in parallel
+  const [feedResults, sheetItems] = await Promise.all([
+    Promise.all(FEEDS.map(f => fetchFeed(f))),
+    fetchGoogleSheet(),
+  ]);
+  ALL = [...feedResults.flat(), ...sheetItems];
+
+  // Pull scraped alerts from scraper.py output
+  try {
+    const r = await fetch('/scraped-alerts');
+    if (r.ok) {
+      const data = await r.json();
+      const items = data.items || [];
+
+      // Build source list from scraper metadata
+      const srcMap = {};
+      items.forEach(item => {
+        const s = item.source || 'Scraped';
+        if (!srcMap[s]) srcMap[s] = { name: s, group: 'Scraped (scraper.py)', status:'ok', count:0 };
+        srcMap[s].count++;
+      });
+      scrapedSources = Object.values(srcMap);
+
+      const scraped = items.map(item => ({
+        id:           item.id,
+        date:         item.date || '',
+        region:       item.region || '',
+        state:        item.state || '',
+        trailName:    extractTrail(item.title || '', item.content || ''),
+        content:      item.content || '',
+        title:        item.title || '',
+        link:         item.url || '',
+        keyword:      'Scraped',
+        source:       item.source || '',
+        actionable:   '',
+        actionReason: '',
+      }));
+      ALL.push(...scraped);
+      console.log(`[scraped] ${scraped.length} items from scraper.py`);
+    }
+  } catch(_){}
+
+  if (ALL.length === 0) {
+    countBar.textContent = 'Error';
+    alist.innerHTML = `<div class="empty">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e53535" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p style="color:var(--red);font-weight:600">Could not load feeds</p>
+      <p style="font-size:11px;color:var(--ink-3);max-width:260px;line-height:1.7">
+        Feeds require the local proxy server.<br><br>
+        <code>python3 server.py</code><br><br>
+        Then open <code>http://localhost:8000</code>
+      </p>
+    </div>`;
+    return;
+  }
+
+  enrichAll();
+  applyFilters();
+})();
+
+})();
+</script>
+</body>
+</html>
