@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Generated data file — rebuilt by running scraper.py
+scraped_alerts.json

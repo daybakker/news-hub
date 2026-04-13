@@ -3,14 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AllTrails — Alert Hub</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<title>AllTrails — News Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
 :root {
   --font: 'Inter', system-ui, -apple-system, sans-serif;
   /* AllTrails brand */
@@ -18,7 +20,8 @@
   --at-green-lt: #edfff5;
   --at-green-md: #b8e4c8;
   /* Header */
-  --hdr-bg: #0d0d0d;
+  --hdr-bg: #ffffff;
+  --hdr-border: #e8e8e8;
   /* Neutrals */
   --ink:   #0a0a0a; --ink-2: #3c3c3c; --ink-3: #717171; --ink-4: #a0a0a0; --ink-5: #d8d8d8;
   --paper: #f4f4f4; --surface: #ffffff; --border: #ebebeb; --border-2: #d4d4d4;
@@ -28,6 +31,10 @@
   --blue: #1350c8; --blue-lt: #eef2ff;
   --purple: #6830c0; --purple-lt: #f4f0ff;
   --teal: #0a7070; --teal-lt: #edfafa;
+  /* International regions */
+  --intl1: #c2410c; --intl1-lt: #fff7ed;
+  --intl2: #0369a1; --intl2-lt: #f0f9ff;
+  --intl3: #7c3aed; --intl3-lt: #f5f3ff;
   /* Layout */
   --hdr-h: 44px;
   --strip-w: 56px;
@@ -43,12 +50,14 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
 #hdr {
   height: var(--hdr-h); background: var(--hdr-bg);
   display: flex; align-items: center; flex-shrink: 0;
-  border-bottom: 1px solid #1c1c1c; z-index: 100;
+  border-bottom: 1px solid var(--hdr-border); z-index: 100;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
 }
 .hdr-brand {
-  width: var(--strip-w); height: var(--hdr-h);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; border-right: 1px solid #1c1c1c;
+  height: var(--hdr-h); padding: 0 16px;
+  display: flex; align-items: center;
+  flex-shrink: 0; border-right: 1px solid var(--hdr-border);
+  color: #1a1a1a;
 }
 .at-logo { display: block; }
 .hdr-nav {
@@ -63,53 +72,37 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
   transition: color .15s;
   white-space: nowrap;
 }
-.hn:hover { color: #ccc; }
-.hn.on { color: #fff; border-bottom-color: var(--at-green); font-weight: 600; }
+.hn:hover { color: #1a1a1a; }
+.hn.on { color: #0a0a0a; border-bottom-color: var(--at-green); font-weight: 600; }
 .hdr-right {
   display: flex; align-items: center; gap: 10px;
   padding: 0 14px; flex-shrink: 0;
 }
-/* Alert count badge */
+/* Item count badge */
 .hdr-count-pill {
   display: flex; align-items: center; gap: 7px;
-  background: #1a1a1a; border: 1px solid #2e2e2e;
+  background: var(--at-green-lt); border: 1px solid var(--at-green-md);
   border-radius: var(--rpill); padding: 5px 12px 5px 10px;
   cursor: default;
 }
 .hcp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--at-green); flex-shrink: 0; }
 .hcp-num {
-  font-size: 15px; font-weight: 700; color: var(--at-green);
+  font-size: 15px; font-weight: 700; color: #1a7a40;
   line-height: 1; min-width: 14px; text-align: center;
 }
-.hcp-lbl { font-size: 11px; font-weight: 500; color: #666; letter-spacing: .01em; }
+.hcp-lbl { font-size: 11px; font-weight: 500; color: #3a7a55; letter-spacing: .01em; }
 /* Avatar */
 .hdr-avatar {
   width: 30px; height: 30px; border-radius: 50%;
-  background: #2e2e2e; display: flex; align-items: center; justify-content: center;
-  color: #888; flex-shrink: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='15' fill='%232e2e2e'/%3E%3Ccircle cx='15' cy='12' r='5' fill='%23555'/%3E%3Cellipse cx='15' cy='26' rx='9' ry='6' fill='%23555'/%3E%3C/svg%3E");
+  background: #e8e8e8; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='15' fill='%23e8e8e8'/%3E%3Ccircle cx='15' cy='12' r='5' fill='%23aaa'/%3E%3Cellipse cx='15' cy='26' rx='9' ry='6' fill='%23aaa'/%3E%3C/svg%3E");
   background-size: cover;
 }
 
 /* ── Layout ── */
 #layout { display: flex; flex: 1; overflow: hidden; }
 
-/* ── Left icon strip ── */
-#icon-strip {
-  width: var(--strip-w); flex-shrink: 0;
-  background: var(--surface); border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; align-items: center;
-  padding-top: 12px; gap: 2px;
-}
-.is-btn {
-  width: 44px; display: flex; flex-direction: column; align-items: center;
-  gap: 4px; padding: 8px 4px 7px; border-radius: var(--r8);
-  border: none; background: none; cursor: pointer;
-  color: var(--ink-4); transition: background .12s, color .12s;
-}
-.is-btn:hover { background: var(--paper); color: var(--ink-3); }
-.is-btn.on { background: var(--at-green-lt); color: var(--at-green); }
-.is-btn span { font-size: 9px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
 
 /* ── Sidebar ── */
 #sb {
@@ -121,11 +114,6 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
   padding: 14px 14px 10px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-}
-.sb-back {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 12px; font-weight: 500; color: var(--ink-4);
-  margin-bottom: 8px; cursor: default;
 }
 .sb-title { font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -.3px; }
 
@@ -194,13 +182,43 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
 .src-name { font-size: 12px; font-weight: 500; color: var(--ink); flex:1; min-width:0;
             white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .src-count { font-size: 11px; font-weight: 600; color: var(--ink-4); flex-shrink:0; }
+.src-remove { margin-left:4px; flex-shrink:0; background:none; border:none; cursor:pointer;
+              color:var(--ink-4); font-size:15px; line-height:1; padding:0 2px; border-radius:3px; }
+.src-remove:hover { color:var(--red); background:var(--red-lt); }
+.src-row.disabled { opacity:.4; }
+.src-row.disabled .src-name { text-decoration: line-through; }
+#src-add-bar { padding:10px 14px; border-bottom:1px solid var(--border); }
+#btn-add-src { width:100%; padding:7px 0; font-size:12px; font-weight:600;
+               background:var(--surface); border:1px dashed var(--border-2);
+               border-radius:var(--r8); cursor:pointer; color:var(--ink-3); }
+#btn-add-src:hover { border-color:var(--at-green); color:var(--at-green); background:var(--at-green-lt); }
+#add-src-form { display:none; flex-direction:column; gap:7px; padding:10px 14px;
+                border-bottom:1px solid var(--border); background:var(--paper); }
+#add-src-form input, #add-src-form select {
+  padding:6px 9px; border:1px solid var(--border-2); border-radius:var(--r8);
+  font-size:12px; font-family:var(--font); color:var(--ink); background:var(--surface); }
+#add-src-form input:focus, #add-src-form select:focus { outline:none; border-color:var(--at-green); }
+.add-src-btns { display:flex; gap:6px; }
+.add-src-btns button { flex:1; padding:6px 0; font-size:12px; font-weight:600;
+                        border-radius:var(--r8); cursor:pointer; border:1px solid var(--border-2); }
+#btn-src-submit { background:var(--at-green); color:#fff; border-color:var(--at-green); }
+#btn-src-cancel  { background:var(--surface); color:var(--ink-3); }
 
 /* Count bar */
 #count-bar {
-  padding: 8px 14px; font-size: 11px; font-weight: 600;
+  padding: 6px 14px; font-size: 11px; font-weight: 600;
   color: var(--ink-4); border-bottom: 1px solid var(--border);
   flex-shrink: 0; letter-spacing: .03em;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
 }
+#sort-btn {
+  font-size: 11px; font-weight: 600; font-family: var(--font);
+  color: var(--ink-3); background: none;
+  border: 1px solid var(--border); border-radius: var(--r4);
+  padding: 3px 8px; cursor: pointer; white-space: nowrap;
+  transition: border-color .12s, color .12s; flex-shrink: 0;
+}
+#sort-btn:hover { border-color: var(--ink-3); color: var(--ink); }
 
 /* Alert list */
 #alist { flex: 1; overflow-y: auto; }
@@ -243,8 +261,33 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
 .b-east    { color:var(--purple);   background:var(--purple-lt);   } .b-east::before   { background:var(--purple); }
 .b-west    { color:var(--teal);     background:var(--teal-lt);     } .b-west::before   { background:var(--teal); }
 .b-other   { color:var(--ink-3);    background:var(--paper);       } .b-other::before  { background:var(--ink-5); }
+.b-intl1   { color:var(--intl1);    background:var(--intl1-lt);    } .b-intl1::before  { background:var(--intl1); }
+.b-intl2   { color:var(--intl2);    background:var(--intl2-lt);    } .b-intl2::before  { background:var(--intl2); }
+.b-intl3   { color:var(--intl3);    background:var(--intl3-lt);    } .b-intl3::before  { background:var(--intl3); }
 .b-added   { color:var(--at-green); background:var(--at-green-lt); } .b-added::before  { background:var(--at-green); }
 .b-notadd  { color:var(--amber);    background:var(--amber-lt);    } .b-notadd::before { background:var(--amber); }
+
+/* ── Dashboard ── */
+#dash { flex:1; overflow-y:auto; padding:28px 32px; background:var(--paper); display:none; }
+#dash::-webkit-scrollbar { width:4px; }
+#dash::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:2px; }
+#dash.on { display:block; }
+.dash-sec { margin-bottom:28px; }
+.dash-sec-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-4); margin-bottom:12px; }
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
+.kpi { background:var(--surface); border:1px solid var(--border); border-radius:var(--r12); padding:16px 18px; }
+.kpi-num { font-size:26px; font-weight:700; color:var(--ink); letter-spacing:-.5px; line-height:1; }
+.kpi-lbl { font-size:10px; font-weight:600; color:var(--ink-4); margin-top:6px; text-transform:uppercase; letter-spacing:.07em; }
+.dash-2col { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r12); padding:16px 18px; }
+.stat-card-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-4); margin-bottom:12px; }
+.rbar { display:flex; align-items:center; gap:10px; margin-bottom:7px; }
+.rbar:last-child { margin-bottom:0; }
+.rbar-lbl { font-size:11px; font-weight:600; color:var(--ink-2); width:54px; flex-shrink:0; }
+.rbar-track { flex:1; height:7px; background:var(--border); border-radius:4px; overflow:hidden; }
+.rbar-fill { height:100%; border-radius:4px; transition:width .5s ease; }
+.rbar-count { font-size:11px; font-weight:700; color:var(--ink-3); width:28px; text-align:right; flex-shrink:0; }
+#dash-map-wrap { border-radius:var(--r12); border:1px solid var(--border); overflow:hidden; height:240px; margin-top:4px; }
 
 /* Empty / error */
 .empty { display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -344,6 +387,7 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
   :root {
     --ink:#f0f0f0; --ink-2:#c0c0c0; --ink-3:#888; --ink-4:#555; --ink-5:#333;
     --paper:#111; --surface:#1a1a1a; --border:#2a2a2a; --border-2:#3a3a3a;
+    --hdr-bg:#0f0f0f; --hdr-border:#222222;
     --at-green:#3ecf6e; --at-green-lt:#071a0e; --at-green-md:#0f3020;
     --red:#f87171; --red-lt:#1e0909;
     --amber:#fbbf24; --amber-lt:#1e1000;
@@ -351,11 +395,15 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
     --purple:#b48aff; --purple-lt:#1a0e30;
     --teal:#2de0e0; --teal-lt:#081818;
   }
+  .hn { color:#666; }
+  .hn:hover { color:#ccc; }
+  .hn.on { color:#fff; }
+  .hcp-num { color:var(--at-green); }
+  .hcp-lbl { color:#555; }
 }
 
 @media (max-width:720px) {
   body { overflow:auto; height:auto; }
-  #icon-strip { display:none; }
   #layout { flex-direction:column; overflow:visible; }
   #sb { width:100%; border-right:none; border-bottom:1px solid var(--border); max-height:55vh; }
   #detail { min-height:60vh; }
@@ -367,53 +415,40 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
 <!-- ── AllTrails internal tool header ── -->
 <header id="hdr">
   <div class="hdr-brand">
-    <!-- AllTrails mountain mark -->
-    <svg class="at-logo" width="26" height="26" viewBox="0 0 26 26" fill="none" aria-label="AllTrails">
-      <path d="M13 3L25 23H1L13 3Z" fill="#3ecf6e"/>
-      <path d="M13 11L18 23H8L13 11Z" fill="#0d0d0d"/>
-    </svg>
+    <img class="at-logo" src="atlogo.webp" width="36" height="36" alt="AllTrails" style="object-fit:contain;">
   </div>
   <nav class="hdr-nav">
     <span class="hn">Tools</span>
-    <span class="hn">Search</span>
-    <span class="hn">Guides</span>
-    <span class="hn">Geo Contribute</span>
-    <span class="hn on">Alert Hub</span>
-    <span class="hn">PLP Admin</span>
+    <span class="hn" id="nav-search" style="cursor:pointer;">Search</span>
+    <span class="hn" id="nav-guides" style="cursor:pointer;">Guides</span>
+    <span class="hn" id="nav-geo" style="cursor:pointer;">Geo Contribute</span>
+    <span class="hn on" id="nav-hub">News Hub</span>
+    <span class="hn" id="nav-plp" style="cursor:pointer;">PLP Admin</span>
   </nav>
   <div class="hdr-right">
-    <div class="hdr-count-pill" title="Unreviewed alerts">
-      <span class="hcp-dot"></span>
-      <span class="hcp-num" id="hdr-count">—</span>
-      <span class="hcp-lbl">alerts for review</span>
-    </div>
-    <div class="hdr-avatar" title="User"></div>
+<div class="hdr-avatar" title="User"></div>
   </div>
 </header>
 
-<div id="layout">
+<div id="geo-page" style="display:none;position:fixed;top:var(--hdr-h);left:0;right:0;bottom:0;overflow:hidden;z-index:50;background:#fff;">
+  <img src="geo3.png" alt="Geo Contribute" style="width:100%;height:100%;object-fit:fill;display:block;">
+</div>
+<div id="search-page" style="display:none;position:fixed;top:var(--hdr-h);left:0;right:0;bottom:0;overflow:hidden;z-index:50;background:#fff;">
+  <img src="search.png" alt="Search" style="width:100%;height:100%;object-fit:fill;display:block;">
+</div>
+<div id="guides-page" style="display:none;position:fixed;top:var(--hdr-h);left:0;right:0;bottom:0;overflow:hidden;z-index:50;background:#fff;">
+  <img src="guides.png" alt="Guides" style="width:100%;height:100%;object-fit:fill;display:block;">
+</div>
+<div id="plp-page" style="display:none;position:fixed;top:var(--hdr-h);left:0;right:0;bottom:0;overflow:hidden;z-index:50;background:#fff;">
+  <img src="plp admin.png" alt="PLP Admin" style="width:100%;height:100%;object-fit:fill;display:block;">
+</div>
 
-  <!-- ── Left icon strip ── -->
-  <div id="icon-strip">
-    <button class="is-btn on" title="Alert Hub">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-        <path d="M13.73 21a2 2 0 01-3.46 0"/>
-      </svg>
-      <span>Alerts</span>
-    </button>
-  </div>
+<div id="layout">
 
   <!-- ── Sidebar ── -->
   <aside id="sb">
     <div class="sb-head">
-      <div class="sb-back">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Back
-      </div>
-      <h2 class="sb-title">Alert Hub</h2>
+      <h2 class="sb-title">News Hub</h2>
     </div>
 
     <div id="vtabs">
@@ -436,13 +471,16 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
 
       <div class="fgroup">
         <span class="fgroup-label">Region</span>
-        <div class="chips" id="chips-region">
-          <button class="chip on" data-r="all">All</button>
-          <button class="chip" data-r="north">North</button>
-          <button class="chip" data-r="south">South</button>
-          <button class="chip" data-r="east">East</button>
-          <button class="chip" data-r="west">West</button>
-        </div>
+        <select id="sel-region" style="width:100%;margin-top:6px;padding:6px 10px;border:1px solid var(--border-2);border-radius:var(--r8);font-size:13px;font-family:var(--font);color:var(--ink);background:var(--surface);cursor:pointer;appearance:auto;">
+          <option value="all">All Regions</option>
+          <option value="north">North</option>
+          <option value="south">South</option>
+          <option value="east">East</option>
+          <option value="west">West</option>
+          <option value="intl1">INTL 1</option>
+          <option value="intl2">INTL 2</option>
+          <option value="intl3">INTL 3</option>
+        </select>
       </div>
 
       <div class="fgroup">
@@ -456,21 +494,33 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
       </div>
     </div>
 
-    <div id="count-bar">Loading…</div>
+    <div id="count-bar"><span id="count-text">Loading…</span><button id="sort-btn">↓ Newest</button></div>
     <div id="alist">
       <div class="empty"><div class="spin"></div><p>Fetching feeds…</p></div>
+    </div>
+    <div id="src-add-bar" style="display:none;">
+      <button id="btn-add-src">+ Add source</button>
+    </div>
+    <div id="add-src-form">
+      <input id="src-name-inp" type="text" placeholder="Source name (e.g. NPS Zion)">
+      <input id="src-url-inp"  type="url"  placeholder="RSS / Atom feed URL">
+      <select id="src-kw-sel">
+        <option value="Closed">Closed alerts</option>
+        <option value="Open">Open / Reopened alerts</option>
+        <option value="NPS">NPS</option>
+        <option value="Scraped">General scraped</option>
+      </select>
+      <div class="add-src-btns">
+        <button id="btn-src-submit">Add</button>
+        <button id="btn-src-cancel">Cancel</button>
+      </div>
     </div>
     <div id="sources-panel"></div>
   </aside>
 
   <!-- ── Detail pane ── -->
   <main id="detail">
-    <div id="d-empty">
-      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 13l4.553 2.276A1 1 0 0021 21.382V10.618a1 1 0 00-.553-.894L15 7m0 13V7m0 0L9 4"/>
-      </svg>
-      <p>Select an alert to review</p>
-    </div>
+    <div id="dash" class="on"><!-- populated by renderDash() --></div>
     <div id="d-body">
       <div id="d-title"></div>
       <div class="meta-block">
@@ -493,10 +543,6 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
       <button class="abtn primary" id="btn-geo">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Open in GeoContribute
-      </button>
-      <button class="abtn" id="btn-copy">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-        Copy location
       </button>
       <button class="abtn" id="btn-rev">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -555,13 +601,65 @@ const FEED_META = [
   // { url:'https://www.google.com/alerts/feeds/YOUR_ID/ALERT_ID', kw:'Closed', name:'"campground closed" alert', group:'Google Alerts' },
   // { url:'https://www.google.com/alerts/feeds/YOUR_ID/ALERT_ID', kw:'Open',   name:'"trailhead reopened" alert', group:'Google Alerts' },
 
-  // ── National Park Service RSS feeds ──
+  // ── InciWeb – Active wildfire / emergency incidents ──
+  { url:'https://inciweb.nwcg.gov/feeds/rss/incidents/', kw:'Fire', name:'InciWeb Active Wildfire Incidents', group:'InciWeb' },
+
+  // ── National Park Service RSS feeds (news + alerts per park) ──
   ...Object.entries(NPS_PARK_NAMES).map(([code, name]) => ({
     url:   `https://www.nps.gov/feeds/getNewsRSS.htm?id=${code}`,
     kw:    'NPS',
     name,
     group: 'National Park Service',
   })),
+
+  // ── Australia – NSW National Parks (fires, floods & closures) ──
+  { url:'https://www.nationalparks.nsw.gov.au/api/rssfeed/get',
+    kw:'NPS', region:'INTL 3', name:'NSW National Parks – Fires, Floods & Closures', group:'Australia – NSW Parks' },
+
+  // ── Australia – Queensland Parks (one feed per region, 13 regions) ──
+  ...['brisbane','bundaberg','capricorn','fraser-coast','gladstone','gold-coast',
+      'mackay','outback-queensland','southern-queensland-country','sunshine-coast',
+      'townsville','tropical-north-queensland','whitsundays'].map(r => ({
+    url:    `https://parks.qld.gov.au/xml/rss/parkalerts-${r}.xml`,
+    kw:     'NPS',
+    region: 'INTL 3',
+    name:   `Queensland Parks – ${r.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}`,
+    group:  'Australia – Queensland Parks',
+  })),
+
+  // ── New Zealand – Department of Conservation ──
+  { url:'http://www.doc.govt.nz/news/rss-feed-to-govtnz/',
+    kw:'NPS', region:'INTL 3', name:'NZ Dept. of Conservation – Media Releases', group:'New Zealand' },
+
+  // ── United Kingdom – Peak District National Park ──
+  { url:'https://www.peakdistrict.gov.uk/learning-about/news/news-rss',
+    kw:'NPS', region:'INTL 3', name:'Peak District National Park – News', group:'United Kingdom' },
+
+  // ── INTL 1 — Google News (pre-filtered by query; language-specific) ──
+  { url:'https://news.google.com/rss/search?q=sentier+ferm%C3%A9&hl=fr&gl=FR&ceid=FR:fr',
+    kw:'Closed', region:'INTL 1', name:'Google News – France (sentier fermé)', group:'INTL 1 – Europe/Americas' },
+  { url:'https://news.google.com/rss/search?q=sendero+cerrado&hl=es&gl=ES&ceid=ES:es',
+    kw:'Closed', region:'INTL 1', name:'Google News – Spain (sendero cerrado)', group:'INTL 1 – Europe/Americas' },
+  { url:'https://news.google.com/rss/search?q=sendero+cerrado&hl=es&gl=AR&ceid=AR:es',
+    kw:'Closed', region:'INTL 1', name:'Google News – Latin America (sendero cerrado)', group:'INTL 1 – Europe/Americas' },
+  { url:'https://news.google.com/rss/search?q=trilha+fechada&hl=pt-BR&gl=BR&ceid=BR:pt-419',
+    kw:'Closed', region:'INTL 1', name:'Google News – Brazil (trilha fechada)', group:'INTL 1 – Europe/Americas' },
+  { url:'https://news.google.com/rss/search?q=%E7%99%BB%E5%B1%B1%E9%81%93+%E9%80%9A%E8%A1%8C%E6%AD%A2%E3%82%81&hl=ja&gl=JP&ceid=JP:ja',
+    kw:'Closed', region:'INTL 1', name:'Google News – Japan (登山道 通行止め)', group:'INTL 1 – Asia' },
+  { url:'https://news.google.com/rss/search?q=%EB%93%B1%EC%82%B0%EB%A1%9C+%ED%86%B5%EC%A0%9C&hl=ko&gl=KR&ceid=KR:ko',
+    kw:'Closed', region:'INTL 1', name:'Google News – Korea (등산로 통제)', group:'INTL 1 – Asia' },
+
+  // ── INTL 2 — Google News (pre-filtered by query; language-specific) ──
+  { url:'https://news.google.com/rss/search?q=Wanderweg+gesperrt&hl=de&gl=DE&ceid=DE:de',
+    kw:'Closed', region:'INTL 2', name:'Google News – Germany (Wanderweg gesperrt)', group:'INTL 2 – Europe' },
+  { url:'https://news.google.com/rss/search?q=sentiero+chiuso&hl=it&gl=IT&ceid=IT:it',
+    kw:'Closed', region:'INTL 2', name:'Google News – Italy (sentiero chiuso)', group:'INTL 2 – Europe' },
+  { url:'https://news.google.com/rss/search?q=wandelpad+gesloten&hl=nl&gl=NL&ceid=NL:nl',
+    kw:'Closed', region:'INTL 2', name:'Google News – Netherlands (wandelpad gesloten)', group:'INTL 2 – Europe' },
+  { url:'https://news.google.com/rss/search?q=sti+stengt&hl=no&gl=NO&ceid=NO:no',
+    kw:'Closed', region:'INTL 2', name:'Google News – Norway (sti stengt)', group:'INTL 2 – Europe' },
+  { url:'https://news.google.com/rss/search?q=vandringsled+st%C3%A4ngd&hl=sv&gl=SE&ceid=SE:sv',
+    kw:'Closed', region:'INTL 2', name:'Google News – Sweden (vandringsled stängd)', group:'INTL 2 – Europe' },
 
   // ── State Parks & Forests (scraped by scraper.py → served at /scraped-alerts) ──
   // These appear as 'Scraped' kw items from the /scraped-alerts endpoint.
@@ -581,28 +679,37 @@ const RKEY = 'at-alert-hub-v3';
 let rdata = JSON.parse(localStorage.getItem(RKEY) || '{}');
 const saveR = () => localStorage.setItem(RKEY, JSON.stringify(rdata));
 
+const USER_SRC_KEY  = 'at-user-sources-v1';
+const DISABLED_KEY  = 'at-disabled-sources-v1';
+let userSources   = JSON.parse(localStorage.getItem(USER_SRC_KEY) || '[]');
+let disabledNames = new Set(JSON.parse(localStorage.getItem(DISABLED_KEY) || '[]'));
+const saveUserSrc     = () => localStorage.setItem(USER_SRC_KEY,  JSON.stringify(userSources));
+const saveDisabled    = () => localStorage.setItem(DISABLED_KEY, JSON.stringify([...disabledNames]));
+
 /* ── App state ── */
-let ALL = [], filtered = [], selIdx = -1, view = 'active', filt = 'all', region = 'all', src = 'all', q = '';
+let ALL = [], filtered = [], selIdx = -1, view = 'active', filt = 'all', region = 'all', src = 'all', q = '', sortOrder = 'desc';
 let mapInst = null, mapMk = null, mapCir = null;
 const geoCache = {};
 let scrapedSources = []; // populated from /scraped-alerts metadata
 
 /* ── DOM ── */
 const $ = id => document.getElementById(id);
-const alist = $('alist'), countBar = $('count-bar'), hdrCount = $('hdr-count');
+const alist = $('alist'), countBar = $('count-bar'), countText = $('count-text'), hdrCount = $('hdr-count');
+const sortBtn = $('sort-btn');
 const srcPanel = $('sources-panel'), ctrls = $('ctrls');
-const dEmpty = $('d-empty'), dBody = $('d-body'), abar = $('abar');
+const dBody = $('d-body'), abar = $('abar');
 const dTitle = $('d-title'), mTrail = $('m-trail'), mState = $('m-state');
 const mStateNote = $('m-state-note'), mRegion = $('m-region'), mFeed = $('m-feed');
 const dContent = $('d-content'), dLink = $('d-link');
 const mapWrap = $('map-wrap'), mapEl = $('map-el'), mapSpin = $('map-spin');
-const btnGeo = $('btn-geo'), btnCopy = $('btn-copy'), btnRev = $('btn-rev');
+const btnGeo = $('btn-geo'), btnRev = $('btn-rev');
 const revOv = $('rev-ov'), rcAdd = $('rc-add'), rcNo = $('rc-no');
 const whyWrap = $('why-wrap'), whyTxt = $('why-txt');
 const revSave = $('rev-save'), revCancel = $('rev-cancel');
 
 /* ── State → Region ── */
 const ST_REGION = {
+  // ── US States ──
   'Maine':'East','New Hampshire':'East','Vermont':'East','Massachusetts':'East','Rhode Island':'East',
   'Connecticut':'East','New York':'East','New Jersey':'East','Pennsylvania':'East',
   'Delaware':'East','Maryland':'East','Virginia':'East','West Virginia':'East',
@@ -614,15 +721,90 @@ const ST_REGION = {
   'South Dakota':'North','North Dakota':'North','Colorado':'North','Utah':'North',
   'Wyoming':'North','Montana':'North','Idaho':'North',
   'California':'West','Oregon':'West','Washington':'West','Nevada':'West',
-  'Arizona':'West','New Mexico':'West','Hawaii':'West','Alaska':'West'
+  'Arizona':'West','New Mexico':'West','Hawaii':'West','Alaska':'West',
+
+  // ── INTL 1 — Asia ──
+  'Japan':'INTL 1','China':'INTL 1','India':'INTL 1','Thailand':'INTL 1','Vietnam':'INTL 1',
+  'Nepal':'INTL 1','Indonesia':'INTL 1','Malaysia':'INTL 1','Philippines':'INTL 1',
+  'South Korea':'INTL 1','Singapore':'INTL 1','Taiwan':'INTL 1','Myanmar':'INTL 1',
+  'Cambodia':'INTL 1','Laos':'INTL 1','Sri Lanka':'INTL 1','Bangladesh':'INTL 1',
+  'Pakistan':'INTL 1','Kazakhstan':'INTL 1','Kyrgyzstan':'INTL 1','Tajikistan':'INTL 1',
+  'Uzbekistan':'INTL 1','Mongolia':'INTL 1','Bhutan':'INTL 1','Maldives':'INTL 1',
+  'Hong Kong':'INTL 1','Macau':'INTL 1','Tibet':'INTL 1',
+  // ── INTL 1 — South America ──
+  'Brazil':'INTL 1','Argentina':'INTL 1','Chile':'INTL 1','Colombia':'INTL 1',
+  'Peru':'INTL 1','Ecuador':'INTL 1','Bolivia':'INTL 1','Venezuela':'INTL 1',
+  'Uruguay':'INTL 1','Paraguay':'INTL 1','Guyana':'INTL 1','Suriname':'INTL 1',
+  'French Guiana':'INTL 1','Patagonia':'INTL 1',
+  // ── INTL 1 — Mexico & Central America ──
+  'Mexico':'INTL 1','Guatemala':'INTL 1','Honduras':'INTL 1','El Salvador':'INTL 1',
+  'Nicaragua':'INTL 1','Costa Rica':'INTL 1','Panama':'INTL 1','Belize':'INTL 1',
+  'Cuba':'INTL 1','Dominican Republic':'INTL 1','Haiti':'INTL 1','Jamaica':'INTL 1',
+  // ── INTL 1 — Western Europe (France/Spain/Portugal) ──
+  'France':'INTL 1','Spain':'INTL 1','Portugal':'INTL 1',
+  'French Polynesia':'INTL 1','Réunion':'INTL 1','Martinique':'INTL 1','Guadeloupe':'INTL 1',
+
+  // ── INTL 2 — Benelux ──
+  'Netherlands':'INTL 2','Belgium':'INTL 2','Luxembourg':'INTL 2',
+  'Aruba':'INTL 2','Curaçao':'INTL 2','Sint Maarten':'INTL 2','Bonaire':'INTL 2',
+  // ── INTL 2 — Eastern Europe ──
+  'Poland':'INTL 2','Croatia':'INTL 2','Czech Republic':'INTL 2','Slovakia':'INTL 2',
+  'Hungary':'INTL 2','Romania':'INTL 2','Bulgaria':'INTL 2','Slovenia':'INTL 2',
+  'Serbia':'INTL 2','Bosnia and Herzegovina':'INTL 2','Montenegro':'INTL 2',
+  'North Macedonia':'INTL 2','Albania':'INTL 2','Kosovo':'INTL 2',
+  'Moldova':'INTL 2','Ukraine':'INTL 2','Belarus':'INTL 2',
+  'Lithuania':'INTL 2','Latvia':'INTL 2','Estonia':'INTL 2',
+  // ── INTL 2 — Germany+ ──
+  'Germany':'INTL 2','Austria':'INTL 2','Liechtenstein':'INTL 2','Switzerland':'INTL 2',
+  // ── INTL 2 — Greece & Cyprus ──
+  'Greece':'INTL 2','Cyprus':'INTL 2',
+  // ── INTL 2 — Italy ──
+  'Italy':'INTL 2','Vatican City':'INTL 2','San Marino':'INTL 2',
+  // ── INTL 2 — Nordic ──
+  'Denmark':'INTL 2','Greenland':'INTL 2','Finland':'INTL 2','Iceland':'INTL 2',
+  'Norway':'INTL 2','Sweden':'INTL 2','Faroe Islands':'INTL 2',
+
+  // ── INTL 3 — Australia (country + states/territories) ──
+  'Australia':'INTL 3','New South Wales':'INTL 3','Queensland':'INTL 3',
+  'Victoria':'INTL 3','Western Australia':'INTL 3','South Australia':'INTL 3',
+  'Tasmania':'INTL 3','Northern Territory':'INTL 3','Australian Capital Territory':'INTL 3',
+  'New Zealand':'INTL 3','Papua New Guinea':'INTL 3',
+  'Fiji':'INTL 3','Samoa':'INTL 3','Vanuatu':'INTL 3','Solomon Islands':'INTL 3',
+  'Tonga':'INTL 3','Kiribati':'INTL 3','Nauru':'INTL 3','Tuvalu':'INTL 3',
+  'Cook Islands':'INTL 3','Marshall Islands':'INTL 3','Norfolk Island':'INTL 3',
+  'Federated States of Micronesia':'INTL 3',
+  // ── INTL 3 — Canada (country + provinces/territories) ──
+  'Canada':'INTL 3','British Columbia':'INTL 3','Ontario':'INTL 3',
+  'Alberta':'INTL 3','Quebec':'INTL 3','Manitoba':'INTL 3','Saskatchewan':'INTL 3',
+  'Nova Scotia':'INTL 3','New Brunswick':'INTL 3','Prince Edward Island':'INTL 3',
+  'Newfoundland':'INTL 3','Yukon':'INTL 3','Northwest Territories':'INTL 3','Nunavut':'INTL 3',
+  // ── INTL 3 — UK+ ──
+  'England':'INTL 3','Scotland':'INTL 3','Wales':'INTL 3','Northern Ireland':'INTL 3',
+  'Ireland':'INTL 3','United Kingdom':'INTL 3',
+  'Malta':'INTL 3','Gibraltar':'INTL 3','Isle of Man':'INTL 3',
+  'Guernsey':'INTL 3','Jersey':'INTL 3','Bermuda':'INTL 3',
+  'Bahamas':'INTL 3','Barbados':'INTL 3','Jamaica':'INTL 3',
+  'Cayman Islands':'INTL 3','Turks and Caicos Islands':'INTL 3',
+  'British Virgin Islands':'INTL 3','Anguilla':'INTL 3','Montserrat':'INTL 3',
+  'Antigua':'INTL 3','Saint Kitts and Nevis':'INTL 3','Saint Vincent and the Grenadines':'INTL 3',
+  'St. Lucia':'INTL 3','Trinidad and Tobago':'INTL 3',
+  'Falkland Islands':'INTL 3','British Indian Ocean Territory':'INTL 3',
+  'Mauritius':'INTL 3','Seychelles':'INTL 3','The Gambia':'INTL 3',
+  'Tonga':'INTL 3',
 };
 
 const STATES = Object.keys(ST_REGION).sort((a,b) => b.length - a.length);
 
 /* ── Noise filters ── */
-const OUTDOOR_RE = /\b(trail|trailhead|hiking|hike|hikers?|mountain\s*bik|bike\s*(trail|path|route|lane)|cycling\s*(path|route)|greenway|riverwalk|boardwalk|campground|camping|national\s*park|state\s*park|county\s*park|city\s*park|regional\s*park|national\s*forest|state\s*forest|wilderness|preserve|recreation\s*area|nature\s*(trail|center|park|area)|park\s*trail|loop\s*trail|footpath|carriage\s*road|fire\s*(closure|restriction|area)|wildfire|prescribed\s*(burn|fire)|backcountry)\b/i;
+const OUTDOOR_RE = /\b(trail|trailhead|hiking|hike|hikers?|mountain\s*bik|bike\s*(trail|path|route|lane)|cycling\s*(path|route)|greenway|riverwalk|boardwalk|campground|camping|national\s*park|state\s*park|county\s*park|city\s*park|regional\s*park|national\s*forest|state\s*forest|wilderness|preserve|recreation\s*area|nature\s*(trail|center|park|area|reserve)|park\s*trail|loop\s*trail|footpath|carriage\s*road|fire\s*(closure|restriction|area)|wildfire|prescribed\s*(burn|fire)|backcountry|walking\s*track|bush\s*track|conservation\s*(reserve|area|park)|scenic\s*reserve|nature\s*reserve)\b/i;
 
-const NOISE_RE = /\bdisney\b|big\s*thunder\s*mountain\s*railroad|pig\s*trail\s*nation|\b(nfl|mlb|nba|nhl|lpga|pga\s+tour)\b|\bgolfer\b|golf\s*(course|champion|tournament)|testifies?|confessed?|\bmurder\b|\bkilling\b|saudi\s*arabia|bahrain|iranian\s*threat|\beconomic\s*impact\b|stock\s*market|\brestaurant\b|\bcasino\b|\bairport\b|\bstadium\b|anwa\s*champ|wildlife\s*(corridor|comeback|recovery|return|popul|herd|nest|spawn|migrat|biolog|conserv|restor|reboun|survey|count|monitor)|visitor\s*(record|number|statistic|center|program|award|service)|science\s*(feature|brief|update|discovery)|press\s*release|public\s*(comment|meeting|hearing)|budget|appropriat|superintendent\s*named|new\s*(superintendent|director|ranger)|partnership|volunteer|donation|grant\s*award|fee\s*(change|increase|waiv)|permit\s*lottery|scholarship|internship|job\s*opening|hiring|employment/i;
+const NOISE_RE = /\bdisney\b|big\s*thunder\s*mountain\s*railroad|pig\s*trail\s*nation|\b(nfl|mlb|nba|nhl|lpga|pga\s+tour)\b|\bgolfer\b|golf\s*(course|champion|tournament)|testifies?|confessed?|\bmurder\b|\bkilling\b|saudi\s*arabia|bahrain|iranian\s*threat|\beconomic\s*impact\b|stock\s*market|\brestaurant\b|\bcasino\b|\bairport\b|\bstadium\b|anwa\s*champ|wildlife\s*(corridor|comeback|recovery|return|popul|herd|nest|spawn|migrat|biolog|conserv|restor|reboun|survey|count|monitor)|visitor\s*(record|number|statistic|center|program|award|service)|science\s*(feature|brief|update|discovery)|press\s*release|public\s*(comment|meeting|hearing)|budget|appropriat|superintendent\s*named|new\s*(superintendent|director|ranger)|partnership|volunteer|donation|grant\s*award|fee\s*(change|increase|waiv)|permit\s*lottery|scholarship|internship|job\s*opening|hiring|employment|\bgun\b|\bshooting\b|\bfirearm\b|\bbullet\b|\bpolitical\s*trail\b|\bcampaign\s*trail\b|\bpaper\s*trail\b|\baudit\s*trail\b|\bmoney\s*trail\b|\btrail\s*of\s*(tears|destruction|evidence|death)\b|\bhousing\b|\breal\s*estate\b|\bproperty\s*(tax|value|sale)\b|\bschool\b|\beducation\b|\belection\b|\bvoting\b|\bpolice\b|\barrest\b|\bcourt\b|\blawsuit\b|\bsentenced\b/i;
+
+/* Specific outdoor place types — must be present for scraped items */
+const PLACE_RE = /\b(trail|trailhead|hiking\s*trail|hike|hikers?|bike\s*trail|mountain\s*bike\s*trail|campground|camping|national\s*park|state\s*park|county\s*park|regional\s*park|city\s*park|national\s*forest|state\s*forest|wilderness|nature\s*(trail|preserve|park)|park\s*trail|loop\s*trail|footpath|backcountry|trailhead|greenway|riverwalk|boardwalk|recreation\s*area|preserve)\b/i;
+
+/* Access / status change words — must be present for scraped items */
+const ACCESS_RE = /\b(closed|closure|closing|reopen(?:ed|ing|s)?|open(?:ed|ing|s)?|restricted|restriction|blocked|impassable|washout|flooded?|flooding|wildfire|prescribed\s*(fire|burn)|evacuate|evacuation|hazardous?|warning|danger(?:ous)?|damaged?|temporarily\s*(closed|shut)|seasonal\s*closure|winter\s*closure|fire\s*(restriction|closure|danger)|alert)\b/i;
 
 /* NPS / scraped items include general press releases — additionally require a closure/access keyword */
 const CLOSURE_RE = /\b(clos(ed?|ure|ing)|reopen(ed?|s|ing)?|restrict(ed|ion|ing)?|access\s+(limited|closed|restricted|open|impacted)|trail\s+(condition|surface|damage|repair|closed)|road\s+(clos|condition|repair|damage)|permit\s+required|danger(ous)?|emergency|wildfire|prescribed\s*(fire|burn)|flood(ed|ing)?|washout|impassable|damage[d]?|temporarily\s+(clos|unavail|shut)|hazard(ous)?|warning|fire\s+(restriction|danger|closure|area)|alert|safety\s+closure|seasonal\s+closure|winter\s+closure)\b/i;
@@ -631,10 +813,15 @@ function isRelevant(a) {
   if (a.source === 'Google Sheet') return true; // team-curated, skip noise filters
   const txt = [a.trailName, a.title, a.content].join(' ');
   if (NOISE_RE.test(txt)) return false;
+  const kw = norm(a.keyword);
+  // Scraped items: require BOTH a specific outdoor place word AND an access/status word
+  if (kw === 'scraped') return PLACE_RE.test(txt) && ACCESS_RE.test(txt);
+  // INTL 1/2 items come from language-specific Google News queries that are already
+  // topic-filtered (e.g. "sentier fermé", "Wanderweg gesperrt") — skip English regex
+  if (a.region === 'INTL 1' || a.region === 'INTL 2') return true;
   if (!OUTDOOR_RE.test(txt)) return false;
   // NPS press releases cover wildlife/events/fees — only keep closure/danger items
-  const kw = norm(a.keyword);
-  if (kw === 'nps' || kw === 'scraped') return CLOSURE_RE.test(txt);
+  if (kw === 'nps') return CLOSURE_RE.test(txt);
   return true;
 }
 
@@ -687,8 +874,41 @@ function extractTrail(title, content){
   const mIn = IN_RE.exec(title);
   if (mIn && mIn[1].length > 4) return mIn[1].trim().substring(0,60);
 
-  // Last resort: first sentence of title, up to first punctuation
-  return title.replace(/[.!?|–—].*$/, '').trim().substring(0,60) || title.substring(0,60);
+  return ''; // no genuine place name found
+}
+
+/* Returns the best short place-name label for sidebar display.
+   Never falls back to a full article headline. */
+function cardLabel(a) {
+  // 1. Use trailName if it was genuinely extracted (not a fluff headline)
+  const tn = (a.trailName || '').trim();
+  if (tn && tn.length <= 50 &&
+      /^[A-Z]/.test(tn) &&
+      !/^(happening|breaking|update|watch|exclusive|alert|warning|news|report)/i.test(tn)) {
+    return tn;
+  }
+
+  // 2. Strip common news prefixes and trailing " – Source" then retry extraction
+  const cleaned = (a.title || '')
+    .replace(/^[A-Z][A-Z\s\/\-]{2,}:\s*/g, '')   // "HAPPENING NOW: " / "BREAKING: "
+    .replace(/\s*[-–—]\s*[\w\s]{2,20}$/, '')      // " - WLOS"
+    .trim();
+
+  if (cleaned && cleaned !== a.title) {
+    const retry = extractTrail(cleaned, a.content || '');
+    if (retry) return retry.substring(0, 50);
+  }
+
+  // 3. Find first sequence of proper-noun words in cleaned title
+  const proper = cleaned.match(/\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){0,4})\b/);
+  if (proper && proper[1].length > 3) return proper[1].substring(0, 50);
+
+  // 4. Try "in/at/near <Place>" in the content snippet
+  const IN_RE = /\b(?:in|at|near)\s+([A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){0,3})\b/;
+  const mIn = IN_RE.exec(a.content || '');
+  if (mIn && mIn[1].length > 4) return mIn[1].trim().substring(0, 50);
+
+  return 'Unknown location';
 }
 
 function getState(a){
@@ -716,7 +936,7 @@ function fmtFeed(a){
   if (k==='closed'||k==='close') return 'trail closed';
   if (k==='open'  ||k==='reopen') return 'trail open';
   if (k==='fire') return 'fire closure';
-  if (k==='nps') return 'NPS';
+  if (k==='nps') return a.source || 'NPS';
   if (k==='scraped') return a.source || 'Scraped';
   const s = inferStatus(a);
   return s==='closed'?'trail closed':s==='open'?'trail open':'—';
@@ -728,6 +948,9 @@ function regionCls(r){
   if (v.includes('south')) return 'south';
   if (v.includes('east'))  return 'east';
   if (v.includes('west'))  return 'west';
+  if (v.includes('intl 1')||v==='intl1') return 'intl1';
+  if (v.includes('intl 2')||v==='intl2') return 'intl2';
+  if (v.includes('intl 3')||v==='intl3') return 'intl3';
   return 'other';
 }
 function badge(cls,lbl){ return `<span class="b b-${cls}">${lbl}</span>`; }
@@ -752,6 +975,8 @@ async function fetchFeed(feedEntry){
       if (r.ok) {
         const text = await r.text();
         const items = parseFeed(text, kw);
+        if (feedEntry.name)   items.forEach(it => { if (!it.source) it.source = feedEntry.name; });
+        if (feedEntry.region) items.forEach(it => { if (!it.region) it.region = feedEntry.region; });;
         console.log(`[feed] ${label} OK "${kw}" (${url.split('/')[2]}): ${items.length} entries`);
         if (statEntry) { statEntry.status = 'ok'; statEntry.count = items.length; }
         return items;
@@ -762,12 +987,14 @@ async function fetchFeed(feedEntry){
     return null;
   }
 
+  const sig = () => AbortSignal.timeout(25000);
+
   // 1. Local proxy (required for Google Alerts; also works for NPS)
-  const proxyResult = await tryFetch('proxy', () => fetch('/feed?url=' + encodeURIComponent(url)));
+  const proxyResult = await tryFetch('proxy', () => fetch('/feed?url=' + encodeURIComponent(url), { signal: sig() }));
   if (proxyResult) return proxyResult;
 
   // 2. Direct fetch (NPS allows CORS)
-  const directResult = await tryFetch('direct', () => fetch(url));
+  const directResult = await tryFetch('direct', () => fetch(url, { signal: sig() }));
   if (directResult) return directResult;
 
   if (statEntry) statEntry.status = 'error';
@@ -877,7 +1104,7 @@ async function fetchGoogleSheet() {
   const CSV_URL = 'https://docs.google.com/spreadsheets/d/1owu_h2MepmrQpOIOJ4d7vtyxzNiwhP7cFmyaG1hsQR4/export?format=csv&gid=1372129223';
   SHEET_STAT.status = 'loading';
   try {
-    const r = await fetch(CSV_URL);
+    const r = await fetch(CSV_URL, { signal: AbortSignal.timeout(8000) });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const text = await r.text();
     const items = parseSheetItems(text);
@@ -936,6 +1163,128 @@ function parseSheetItems(csv) {
   return items;
 }
 
+/* ── Dashboard ────────────────────────────────────────────────────────────── */
+const STATE_CENTERS = {
+  'Alabama':[32.8,-86.8],'Alaska':[64.2,-153.4],'Arizona':[34.3,-111.1],'Arkansas':[34.7,-92.4],
+  'California':[36.8,-119.4],'Colorado':[39.0,-105.5],'Connecticut':[41.6,-72.7],'Delaware':[39.0,-75.5],
+  'Florida':[27.8,-81.7],'Georgia':[32.2,-83.4],'Hawaii':[20.9,-157.5],'Idaho':[44.5,-114.3],
+  'Illinois':[40.0,-89.0],'Indiana':[40.3,-86.1],'Iowa':[42.1,-93.5],'Kansas':[38.7,-98.4],
+  'Kentucky':[37.7,-84.9],'Louisiana':[31.2,-91.8],'Maine':[45.4,-69.0],'Maryland':[39.1,-76.8],
+  'Massachusetts':[42.2,-71.8],'Michigan':[44.3,-84.5],'Minnesota':[46.4,-93.1],'Mississippi':[32.7,-89.7],
+  'Missouri':[38.5,-92.5],'Montana':[47.0,-109.6],'Nebraska':[41.5,-99.9],'Nevada':[39.3,-116.6],
+  'New Hampshire':[43.7,-71.6],'New Jersey':[40.2,-74.5],'New Mexico':[34.8,-106.2],'New York':[42.2,-74.9],
+  'North Carolina':[35.8,-79.4],'North Dakota':[47.5,-100.5],'Ohio':[40.4,-82.7],'Oklahoma':[35.6,-96.9],
+  'Oregon':[44.6,-122.1],'Pennsylvania':[40.9,-77.8],'Rhode Island':[41.7,-71.6],'South Carolina':[33.9,-80.9],
+  'South Dakota':[44.4,-100.2],'Tennessee':[35.9,-86.4],'Texas':[31.5,-99.3],'Utah':[39.3,-111.1],
+  'Vermont':[44.0,-72.7],'Virginia':[37.8,-78.2],'Washington':[47.4,-120.6],'West Virginia':[38.9,-80.4],
+  'Wisconsin':[44.3,-89.6],'Wyoming':[43.0,-107.6]
+};
+
+
+function renderDash() {
+  const dash = $('dash');
+  if (!dash || !dash.classList.contains('on')) return;
+
+  const base = RELEVANT().filter(a => { const ms=dateMs(a); return ms===null||ms>=CUTOFF_MS; });
+  const active   = base.filter(a => !rdata[a.id]).length;
+  const reviewed = base.filter(a => !!rdata[a.id]).length;
+  const added    = base.filter(a => rdata[a.id]?.outcome==='added').length;
+  const closed   = base.filter(a => inferStatus(a)==='closed').length;
+  const open     = base.filter(a => inferStatus(a)==='open').length;
+  const total    = base.length || 1;
+
+  const googleCt  = base.filter(a => { const k=norm(a.keyword); return k==='closed'||k==='open'; }).length;
+  const npsCt     = base.filter(a => norm(a.keyword)==='nps').length;
+  const scrapedCt = base.filter(a => norm(a.keyword)==='scraped').length;
+
+  const REGIONS = ['North','South','East','West','INTL 1','INTL 2','INTL 3'];
+  const RC_MAP  = {'North':'var(--blue)','South':'var(--amber)','East':'var(--purple)',
+                   'West':'var(--teal)','INTL 1':'var(--intl1)','INTL 2':'var(--intl2)','INTL 3':'var(--intl3)'};
+  const rCounts = {};
+  REGIONS.forEach(r => rCounts[r] = 0);
+  base.forEach(a => { const r = a.region; if (rCounts[r]!==undefined) rCounts[r]++; });
+  const maxR = Math.max(1, ...Object.values(rCounts));
+
+  const withDates = base.filter(a=>a.date).sort((a,b)=>dateMs(b)-dateMs(a));
+  const newestDate = withDates[0] ? fmtDate(withDates[0].date) : '—';
+
+  function bar(lbl, count, max, color) {
+    return `<div class="rbar">
+      <span class="rbar-lbl">${esc(lbl)}</span>
+      <div class="rbar-track"><div class="rbar-fill" style="width:${Math.round(count/max*100)}%;background:${color}"></div></div>
+      <span class="rbar-count">${count}</span>
+    </div>`;
+  }
+
+  dash.innerHTML = `
+    <div class="dash-sec">
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-num">${base.length}</div><div class="kpi-lbl">Total Items</div></div>
+        <div class="kpi"><div class="kpi-num" style="color:var(--red)">${active}</div><div class="kpi-lbl">Active</div></div>
+        <div class="kpi"><div class="kpi-num" style="color:var(--at-green)">${reviewed}</div><div class="kpi-lbl">Reviewed</div></div>
+        <div class="kpi"><div class="kpi-num">${added}</div><div class="kpi-lbl">Added</div></div>
+      </div>
+      <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><div class="kpi-num">${closed}</div><div class="kpi-lbl">Closures</div></div>
+        <div class="kpi"><div class="kpi-num">${open}</div><div class="kpi-lbl">Reopenings</div></div>
+        <div class="kpi"><div class="kpi-num" style="font-size:16px;padding-top:4px">${newestDate}</div><div class="kpi-lbl">Most Recent</div></div>
+      </div>
+    </div>
+
+    <div class="dash-sec">
+      <div class="dash-section-title dash-sec-title">By Region</div>
+      <div class="dash-2col">
+        <div class="stat-card">
+          <div class="stat-card-title">Region Breakdown</div>
+          ${REGIONS.map(r => bar(r, rCounts[r], maxR, RC_MAP[r])).join('')}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="stat-card">
+            <div class="stat-card-title">Status</div>
+            ${bar('Closed', closed, total, 'var(--red)')}
+            ${bar('Open',   open,   total, 'var(--at-green)')}
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Source</div>
+            ${bar('Google',  googleCt,  total, '#4285f4')}
+            ${bar('Parks',   npsCt,     total, 'var(--amber)')}
+            ${bar('Scraped', scrapedCt, total, 'var(--teal)')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-sec">
+      <div style="position:relative;width:100%;border-radius:var(--r12);border:1px solid var(--border);overflow:hidden;">
+        <img src="geo4.png" style="width:100%;display:block;">
+        ${(()=>{
+          const PIN_POS = {
+            'West':   {top:'24%', left:'3.8%'},
+            'North':  {top:'17%', left:'7.2%'},
+            'East':   {top:'20%', left:'10.5%'},
+            'South':  {top:'29%', left:'6.8%'},
+            'INTL 1': {top:'52%', left:'13.5%'},
+            'INTL 2': {top:'15%', left:'46.5%'},
+            'INTL 3': {top:'11%', left:'43%'},
+          };
+          const PIN_COLOR = {
+            'North':'#1350c8','South':'#b05c00','East':'#6830c0',
+            'West':'#0a7070','INTL 1':'#c2410c','INTL 2':'#0369a1','INTL 3':'#7c3aed',
+          };
+          return REGIONS.map(r => {
+            const n = rCounts[r]; if (!n) return '';
+            const p = PIN_POS[r]; const c = PIN_COLOR[r];
+            const sz = Math.min(32, 18 + Math.sqrt(n) * 1.4);
+            return `<div title="${r}: ${n} alert${n!==1?'s':''}" style="position:absolute;top:${p.top};left:${p.left};transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
+              <div style="background:${c};color:#fff;border-radius:50%;width:${sz}px;height:${sz}px;display:flex;align-items:center;justify-content:center;font-size:${sz<22?8:9}px;font-weight:700;border:1.5px solid rgba(255,255,255,.8);box-shadow:0 1px 4px rgba(0,0,0,.4);line-height:1;">${n}</div>
+              <div style="font-size:7px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9);margin-top:1px;letter-spacing:.02em;">${r}</div>
+            </div>`;
+          }).join('');
+        })()}
+      </div>
+    </div>`;
+}
+
 /* ── Enrich: derive region from inferred state ── */
 function enrichAll(){
   ALL.forEach(a => {
@@ -954,6 +1303,9 @@ const RELEVANT = () => ALL.filter(isRelevant);
 
 function applyFilters(){
   const base = RELEVANT().filter(a => {
+    // Disabled sources filter
+    if (a.source && disabledNames.has(a.source)) return false;
+
     // Date cutoff — exclude items older than April 1 2026 (items with no date pass through)
     const ms = dateMs(a);
     if (ms !== null && ms < CUTOFF_MS) return false;
@@ -970,6 +1322,9 @@ function applyFilters(){
     if (region==='south' && !rgn.includes('south')) return false;
     if (region==='east'  && !rgn.includes('east'))  return false;
     if (region==='west'  && !rgn.includes('west'))  return false;
+    if (region==='intl1' && regionCls(a.region)!=='intl1') return false;
+    if (region==='intl2' && regionCls(a.region)!=='intl2') return false;
+    if (region==='intl3' && regionCls(a.region)!=='intl3') return false;
 
     // Source filter
     const isGoogle  = kw==='closed'||kw==='open';
@@ -989,17 +1344,18 @@ function applyFilters(){
     return true;
   });
 
-  // Sort newest first; items with no date fall to the bottom
+  // Sort by date; items with no date fall to the bottom
   base.sort((a,b) => {
     const ma = dateMs(a), mb = dateMs(b);
     if (ma===null && mb===null) return 0;
     if (ma===null) return 1;
     if (mb===null) return -1;
-    return mb - ma;
+    return sortOrder === 'desc' ? mb - ma : ma - mb;
   });
 
   filtered = view==='active' ? base.filter(a=>!rdata[a.id]) : base.filter(a=>!!rdata[a.id]);
   render();
+  renderDash();
 }
 
 function renderSources(){
@@ -1008,42 +1364,61 @@ function renderSources(){
     if (!groups[s.group]) groups[s.group] = [];
     groups[s.group].push(s);
   });
-  // Add scraped sources group if scraper output is loaded
-  if (scrapedSources.length) groups['Scraped (scraper.py)'] = scrapedSources;
+  if (scrapedSources.length) groups['Scraped (NewsAPI)'] = scrapedSources;
+  if (userSources.length) {
+    groups['User-added Sources'] = userSources.map(u => ({
+      name: u.name, url: u.url, status: 'ok', count: ALL.filter(a=>a.source===u.name).length
+    }));
+  }
 
   let html = '';
   for (const [gname, rows] of Object.entries(groups)) {
     const total = rows.reduce((a,r)=>a+(r.count||0),0);
     html += `<div class="src-group-hdr">${esc(gname)} <span style="font-weight:400;opacity:.6">${total} items</span></div>`;
     rows.forEach(r => {
-      const dotCls = r.status==='ok'&&r.count>0 ? 'ok' : r.status==='ok'&&r.count===0 ? 'empty' : r.status==='error' ? 'error' : 'loading';
+      const disabled = disabledNames.has(r.name);
+      const dotCls = disabled ? 'error' : r.status==='ok'&&r.count>0 ? 'ok' : r.status==='ok'&&r.count===0 ? 'empty' : r.status==='error' ? 'error' : 'loading';
       const errStr = r.errorCode ? ` (HTTP ${r.errorCode})` : '';
-      const label = r.status==='loading' ? 'loading…' : r.status==='error' ? `error${errStr}` : r.count > 0 ? `${r.count} items` : 'no items';
-      html += `<div class="src-row"><span class="src-dot ${dotCls}"></span><span class="src-name">${esc(r.name)}</span><span class="src-count">${label}</span></div>`;
+      const label = disabled ? 'disabled' : r.status==='loading' ? 'loading…' : r.status==='error' ? `error${errStr}` : r.count > 0 ? `${r.count} items` : 'no items';
+      html += `<div class="src-row${disabled?' disabled':''}" data-src-name="${esc(r.name)}">
+        <span class="src-dot ${dotCls}"></span>
+        <span class="src-name">${esc(r.name)}</span>
+        <span class="src-count">${label}</span>
+        <button class="src-remove" data-name="${esc(r.name)}" title="${disabled?'Re-enable':'Remove'} source">${disabled?'↺':'×'}</button>
+      </div>`;
     });
   }
-  srcPanel.innerHTML = html || '<div class="empty"><p>No sources loaded yet</p></div>';
+  srcPanel.innerHTML = html || '<div style="padding:14px;font-size:12px;color:var(--ink-4)">No sources loaded yet</div>';
 }
 
 function render(){
   const active = RELEVANT().filter(a=>!rdata[a.id]).length;
-  hdrCount.textContent = active;
+  if (hdrCount) hdrCount.textContent = active;
 
+  const addBar  = $('src-add-bar');
+  const addForm = $('add-src-form');
   if (view === 'sources') {
     ctrls.style.display  = 'none';
     countBar.style.display = 'none';
     alist.style.display  = 'none';
     srcPanel.style.display = 'block';
+    if (addBar)  addBar.style.display  = 'block';
+    if (addForm) addForm.style.display = 'none';
     renderSources();
     return;
   }
+  sortBtn.style.display = 'none';
   ctrls.style.display  = '';
   countBar.style.display = '';
   alist.style.display  = 'block';
   srcPanel.style.display = 'none';
+  if (addBar)  addBar.style.display  = 'none';
+  if (addForm) addForm.style.display = 'none';
 
   const n = filtered.length;
-  countBar.textContent = 'Items: ' + n;
+  countText.textContent = n + ' items';
+  sortBtn.textContent = sortOrder === 'desc' ? '↓ Newest' : '↑ Oldest';
+  sortBtn.style.display = '';
   if (!n){
     alist.innerHTML = '<div class="empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>No alerts match</p></div>';
     return;
@@ -1059,7 +1434,7 @@ function render(){
       `<div class="card-icon">${cardIconSvg(status)}</div>`+
       `<div class="card-body">`+
         `<div class="card-chips">${status ? badge('b-'+status, status) : ''}${badge(regionCls(a.region), a.region||'?')}${rd?(rd.outcome==='added'?badge('added','Added'):badge('notadd','Not added')):''}</div>`+
-        `<div class="card-name">${esc(a.trailName||a.title||'Unnamed')}</div>`+
+        `<div class="card-name">${esc(cardLabel(a))}</div>`+
         `<div class="card-sub">${esc(st.v)}${st.v&&a.date?' · ':''}${fmtDate(a.date)}</div>`+
         (rd&&rd.reason?`<div class="card-reason">"${esc(rd.reason)}"</div>`:'') +
       `</div>`;
@@ -1076,7 +1451,7 @@ function select(i){
   const a = filtered[i]; if (!a) return;
   const st = getState(a);
 
-  dEmpty.style.display='none';
+  $('dash').classList.remove('on');
   dBody.classList.add('on');
   abar.classList.add('on');
 
@@ -1101,15 +1476,6 @@ function select(i){
     window.open(url,'_blank','noopener');
   };
 
-  btnCopy.onclick = () => {
-    const loc = [a.trailName,st.v].filter(Boolean).join(', ');
-    const orig = btnCopy.innerHTML;
-    navigator.clipboard.writeText(loc).then(()=>{
-      btnCopy.classList.add('copied');
-      btnCopy.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-      setTimeout(()=>{ btnCopy.innerHTML=orig; btnCopy.classList.remove('copied'); },1800);
-    }).catch(()=>prompt('Copy:',loc));
-  };
 
   btnRev.onclick = ()=>openModal(a);
   geocode(a, st.v);
@@ -1122,7 +1488,9 @@ function updateRevBtn(id){
 }
 
 function clearDetail(){
-  dEmpty.style.display='flex'; dBody.classList.remove('on'); abar.classList.remove('on');
+  $('dash').classList.add('on');
+  dBody.classList.remove('on'); abar.classList.remove('on');
+  renderDash();
 }
 
 /* ── Modal ── */
@@ -1201,10 +1569,8 @@ $('chips-status').addEventListener('click',e=>{
   $('chips-status').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
   b.classList.add('on'); filt=b.dataset.f; selIdx=-1; applyFilters(); clearDetail();
 });
-$('chips-region').addEventListener('click',e=>{
-  const b=e.target.closest('.chip'); if(!b||!b.dataset.r) return;
-  $('chips-region').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
-  b.classList.add('on'); region=b.dataset.r; selIdx=-1; applyFilters(); clearDetail();
+$('sel-region').addEventListener('change',e=>{
+  region=e.target.value; selIdx=-1; applyFilters(); clearDetail();
 });
 $('chips-src').addEventListener('click',e=>{
   const b=e.target.closest('.chip'); if(!b||!b.dataset.s) return;
@@ -1212,24 +1578,63 @@ $('chips-src').addEventListener('click',e=>{
   b.classList.add('on'); src=b.dataset.s; selIdx=-1; applyFilters(); clearDetail();
 });
 $('search').addEventListener('input',e=>{ q=e.target.value; selIdx=-1; applyFilters(); clearDetail(); });
+sortBtn.addEventListener('click',()=>{ sortOrder = sortOrder==='desc' ? 'asc' : 'desc'; applyFilters(); });
+
+/* ── Source management ── */
+$('btn-add-src').addEventListener('click', () => {
+  $('src-add-bar').style.display  = 'none';
+  $('add-src-form').style.display = 'flex';
+  $('src-name-inp').focus();
+});
+$('btn-src-cancel').addEventListener('click', () => {
+  $('add-src-form').style.display = 'none';
+  $('src-add-bar').style.display  = 'block';
+  $('src-name-inp').value = '';
+  $('src-url-inp').value  = '';
+});
+$('btn-src-submit').addEventListener('click', async () => {
+  const name = $('src-name-inp').value.trim();
+  const url  = $('src-url-inp').value.trim();
+  const kw   = $('src-kw-sel').value;
+  if (!name || !url) { alert('Please enter both a name and a URL.'); return; }
+  userSources.push({ name, url, kw });
+  saveUserSrc();
+  $('btn-src-cancel').click();
+  // Fetch the new feed immediately and merge into ALL
+  try {
+    const items = await fetchFeed({ url, kw, name, group: 'User-added Sources' });
+    if (items.length) {
+      const existing = new Set(ALL.map(a=>a.id));
+      ALL.push(...items.filter(a=>!existing.has(a.id)));
+      enrichAll(); applyFilters(); renderDash();
+    }
+  } catch(_){}
+  renderSources();
+});
+// Remove / re-enable source via delegated click on srcPanel
+$('sources-panel').addEventListener('click', e => {
+  const btn = e.target.closest('.src-remove');
+  if (!btn) return;
+  const name = btn.dataset.name;
+  if (disabledNames.has(name)) {
+    disabledNames.delete(name);
+  } else {
+    disabledNames.add(name);
+  }
+  saveDisabled();
+  applyFilters();
+  renderSources();
+});
 
 /* ── Init ── */
 (async function init(){
-  // Fetch RSS/Atom feeds AND Google Sheet in parallel
-  const [feedResults, sheetItems] = await Promise.all([
-    Promise.all(FEEDS.map(f => fetchFeed(f))),
-    fetchGoogleSheet(),
-  ]);
-  ALL = [...feedResults.flat(), ...sheetItems];
 
-  // Pull scraped alerts from scraper.py output
+  // ── Step 1: Load scraped NewsAPI alerts first (local file = instant) ─────────
   try {
-    const r = await fetch('/scraped-alerts');
+    const r = await fetch('/scraped-alerts', { signal: AbortSignal.timeout(5000) });
     if (r.ok) {
       const data = await r.json();
       const items = data.items || [];
-
-      // Build source list from scraper metadata
       const srcMap = {};
       items.forEach(item => {
         const s = item.source || 'Scraped';
@@ -1237,8 +1642,7 @@ $('search').addEventListener('input',e=>{ q=e.target.value; selIdx=-1; applyFilt
         srcMap[s].count++;
       });
       scrapedSources = Object.values(srcMap);
-
-      const scraped = items.map(item => ({
+      ALL.push(...items.map(item => ({
         id:           item.id,
         date:         item.date || '',
         region:       item.region || '',
@@ -1251,30 +1655,83 @@ $('search').addEventListener('input',e=>{ q=e.target.value; selIdx=-1; applyFilt
         source:       item.source || '',
         actionable:   '',
         actionReason: '',
-      }));
-      ALL.push(...scraped);
-      console.log(`[scraped] ${scraped.length} items from scraper.py`);
+      })));
+      console.log(`[scraped] ${items.length} items loaded`);
     }
   } catch(_){}
 
-  if (ALL.length === 0) {
-    countBar.textContent = 'Error';
-    alist.innerHTML = `<div class="empty">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e53535" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <p style="color:var(--red);font-weight:600">Could not load feeds</p>
-      <p style="font-size:11px;color:var(--ink-3);max-width:260px;line-height:1.7">
-        Feeds require the local proxy server.<br><br>
-        <code>python3 server.py</code><br><br>
-        Then open <code>http://localhost:8000</code>
-      </p>
-    </div>`;
-    return;
+  // ── Step 2: Render immediately with scraped data so the page isn't blank ─────
+  if (ALL.length > 0) {
+    enrichAll();
+    applyFilters();
+    renderDash();
   }
 
-  enrichAll();
-  applyFilters();
+  // ── Step 3: Load external feeds in the background (NPS, Google Alerts, etc.) ─
+  try {
+    const [feedResults, sheetItems] = await Promise.all([
+      Promise.all(FEEDS.map(f => fetchFeed(f))),
+      fetchGoogleSheet(),
+    ]);
+    const external = [...feedResults.flat(), ...sheetItems];
+    if (external.length > 0) {
+      const existingIds = new Set(ALL.map(a => a.id));
+      ALL.push(...external.filter(a => !existingIds.has(a.id)));
+      enrichAll();
+      applyFilters();
+      renderDash();
+      console.log(`[feeds] ${external.length} external items merged`);
+    }
+  } catch(_){}
+
+  // ── Step 4: If nothing loaded at all, show error ──────────────────────────────
+  if (ALL.length === 0) {
+    countText.textContent = 'Error';
+    alist.innerHTML = `<div class="empty">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e53535" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p style="color:var(--red);font-weight:600">Could not load alerts</p>
+      <p style="font-size:11px;color:var(--ink-3);max-width:260px;line-height:1.7">
+        Make sure the server is running:<br><br>
+        <code>python3 "/Users/dana/alert hub/server.py"</code>
+      </p>
+    </div>`;
+  }
 })();
 
+})();
+</script>
+<script>
+(function () {
+  const pages = {
+    'nav-search': 'search-page',
+    'nav-guides': 'guides-page',
+    'nav-geo':    'geo-page',
+    'nav-plp':    'plp-page',
+  };
+  const allNavIds  = ['nav-search','nav-guides','nav-geo','nav-hub','nav-plp'];
+  const allPageIds = Object.values(pages);
+
+  function showPage(pageId) {
+    allPageIds.forEach(id => document.getElementById(id).style.display = 'none');
+    if (pageId) document.getElementById(pageId).style.display = 'block';
+  }
+
+  function setActive(navId) {
+    allNavIds.forEach(id => document.getElementById(id).classList.remove('on'));
+    document.getElementById(navId).classList.add('on');
+  }
+
+  Object.entries(pages).forEach(([navId, pageId]) => {
+    document.getElementById(navId).addEventListener('click', () => {
+      showPage(pageId);
+      setActive(navId);
+    });
+  });
+
+  document.getElementById('nav-hub').addEventListener('click', () => {
+    showPage(null);
+    setActive('nav-hub');
+  });
 })();
 </script>
 </body>
