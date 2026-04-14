@@ -248,6 +248,7 @@ def scrape_nps_api():
 # Active wildfire / emergency incidents from the US interagency system.
 
 ATOM_NS = 'http://www.w3.org/2005/Atom'
+ATOM_ENTRY = f'{{{ATOM_NS}}}entry'
 
 def fetch_inciweb():
     log('InciWeb RSS…')
@@ -284,6 +285,123 @@ def fetch_inciweb():
     return items
 
 
+# ── 4. International RSS feeds ───────────────────────────────────────────────
+# Mirrors the FEED_META entries in index.html that have a region set.
+# These feeds block browser CORS so they can't be fetched client-side on
+# GitHub Pages — scraping them here and saving to scraped_alerts.json is the
+# only way they show up in the hosted version.
+
+INTL_FEEDS = [
+    # INTL 3 — park agency feeds (AU, NZ, UK)
+    ('https://www.nationalparks.nsw.gov.au/api/rssfeed/get',
+     'INTL 3', 'NSW National Parks'),
+    ('http://www.doc.govt.nz/news/rss-feed-to-govtnz/',
+     'INTL 3', 'NZ Dept. of Conservation'),
+    ('https://www.peakdistrict.gov.uk/learning-about/news/news-rss',
+     'INTL 3', 'Peak District National Park'),
+    *[(f'https://parks.qld.gov.au/xml/rss/parkalerts-{r}.xml',
+       'INTL 3',
+       f'Queensland Parks – {r.replace("-", " ").title()}')
+      for r in [
+          'brisbane', 'bundaberg', 'capricorn', 'fraser-coast', 'gladstone',
+          'gold-coast', 'mackay', 'outback-queensland',
+          'southern-queensland-country', 'sunshine-coast',
+          'townsville', 'tropical-north-queensland', 'whitsundays',
+      ]],
+    # INTL 1 — Google News RSS (pre-filtered by query, language-specific)
+    ('https://news.google.com/rss/search?q=sentier+ferm%C3%A9&hl=fr&gl=FR&ceid=FR:fr',
+     'INTL 1', 'Google News – France (sentier fermé)'),
+    ('https://news.google.com/rss/search?q=sendero+cerrado&hl=es&gl=ES&ceid=ES:es',
+     'INTL 1', 'Google News – Spain (sendero cerrado)'),
+    ('https://news.google.com/rss/search?q=sendero+cerrado&hl=es&gl=AR&ceid=AR:es',
+     'INTL 1', 'Google News – Latin America (sendero cerrado)'),
+    ('https://news.google.com/rss/search?q=trilha+fechada&hl=pt-BR&gl=BR&ceid=BR:pt-419',
+     'INTL 1', 'Google News – Brazil (trilha fechada)'),
+    ('https://news.google.com/rss/search?q=%E7%99%BB%E5%B1%B1%E9%81%93+%E9%80%9A%E8%A1%8C%E6%AD%A2%E3%82%81&hl=ja&gl=JP&ceid=JP:ja',
+     'INTL 1', 'Google News – Japan (登山道 通行止め)'),
+    ('https://news.google.com/rss/search?q=%EB%93%B1%EC%82%B0%EB%A1%9C+%ED%86%B5%EC%A0%9C&hl=ko&gl=KR&ceid=KR:ko',
+     'INTL 1', 'Google News – Korea (등산로 통제)'),
+    # INTL 2 — Google News RSS (pre-filtered by query, language-specific)
+    ('https://news.google.com/rss/search?q=Wanderweg+gesperrt&hl=de&gl=DE&ceid=DE:de',
+     'INTL 2', 'Google News – Germany (Wanderweg gesperrt)'),
+    ('https://news.google.com/rss/search?q=sentiero+chiuso&hl=it&gl=IT&ceid=IT:it',
+     'INTL 2', 'Google News – Italy (sentiero chiuso)'),
+    ('https://news.google.com/rss/search?q=wandelpad+gesloten&hl=nl&gl=NL&ceid=NL:nl',
+     'INTL 2', 'Google News – Netherlands (wandelpad gesloten)'),
+    ('https://news.google.com/rss/search?q=sti+stengt&hl=no&gl=NO&ceid=NO:no',
+     'INTL 2', 'Google News – Norway (sti stengt)'),
+    ('https://news.google.com/rss/search?q=vandringsled+st%C3%A4ngd&hl=sv&gl=SE&ceid=SE:sv',
+     'INTL 2', 'Google News – Sweden (vandringsled stängd)'),
+]
+
+
+def _parse_feed_xml(root):
+    """Return list of (title, link, desc, pubdate) from RSS or Atom XML."""
+    entries = []
+
+    # RSS 2.0 — <item> elements
+    for item in root.iter('item'):
+        title   = strip_tags(item.findtext('title') or '')
+        link    = (item.findtext('link') or '').strip()
+        desc    = strip_tags(item.findtext('description') or '')
+        pubdate = (item.findtext('pubDate') or '').strip()
+        if title:
+            entries.append((title, link, desc, pubdate))
+
+    # Atom — <entry> elements (fallback if no <item> found)
+    if not entries:
+        for entry in root.iter(ATOM_ENTRY):
+            title   = strip_tags(entry.findtext(f'{{{ATOM_NS}}}title') or
+                                 entry.findtext('title') or '')
+            link_el = entry.find(f'{{{ATOM_NS}}}link')
+            link    = (link_el.get('href', '') if link_el is not None
+                       else (entry.findtext('link') or '')).strip()
+            desc    = strip_tags(entry.findtext(f'{{{ATOM_NS}}}summary') or
+                                 entry.findtext(f'{{{ATOM_NS}}}content') or '')
+            pubdate = (entry.findtext(f'{{{ATOM_NS}}}updated') or
+                       entry.findtext(f'{{{ATOM_NS}}}published') or '').strip()
+            if title:
+                entries.append((title, link, desc, pubdate))
+
+    return entries
+
+
+def fetch_intl_feeds():
+    log('International RSS feeds…')
+    all_items = []
+
+    for url, region, source_name in INTL_FEEDS:
+        try:
+            raw  = fetch(url)
+            root = ET.fromstring(raw.encode('utf-8', errors='replace'))
+        except Exception as e:
+            log(f'  ✗ {source_name}: {e}')
+            time.sleep(0.3)
+            continue
+
+        entries = _parse_feed_xml(root)
+        batch = []
+        for title, link, desc, pubdate in entries:
+            batch.append({
+                'id':      f"intl-{abs(hash(link or title))}",
+                'title':   title,
+                'content': desc[:400],
+                'url':     link,
+                'date':    pubdate,
+                'source':  source_name,
+                'state':   '',
+                'region':  region,
+                'keyword': 'Scraped',
+            })
+
+        log(f'  {source_name}: {len(batch)} items')
+        all_items.extend(batch)
+        time.sleep(0.3)
+
+    log(f'International feeds total: {len(all_items)} items')
+    return all_items
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -291,8 +409,9 @@ def main():
     print(f'  {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
 
     items = []
-    items.extend(scrape_nps_api());  time.sleep(0.5)
-    items.extend(fetch_inciweb());   time.sleep(0.5)
+    items.extend(scrape_nps_api());   time.sleep(0.5)
+    items.extend(fetch_inciweb());    time.sleep(0.5)
+    items.extend(fetch_intl_feeds()); time.sleep(0.5)
     items.extend(fetch_newsapi())
 
     # Deduplicate

@@ -6,5 +6,4 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Generated data file — rebuilt by running scraper.py
-scraped_alerts.json
+# scraped_alerts.json is intentionally committed so GitHub Pages can serve it
