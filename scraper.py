@@ -13,7 +13,8 @@ Cron: 0 7 * * * /usr/bin/python3 "/Users/dana/alert hub/scraper.py" >> /tmp/at-s
 
 import json, re, sys, os, time, ssl
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 
@@ -22,8 +23,10 @@ NEWS_API_KEY = '6d079103dd174946af894e6653d91a75'   # newsapi.org  (free, 100 re
 NPS_API_KEY  = 'DEMO_KEY'        # developer.nps.gov (optional, raises rate limit)
 # ─────────────────────────────────────────────────────────────────────────────
 
-OUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scraped_alerts.json')
-CUTOFF   = '2026-04-01'          # Don't pull articles older than this
+OUT_FILE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scraped_alerts.json')
+# Rolling 30-day window — keeps data fresh and avoids accumulating stale articles
+CUTOFF_DT   = datetime.now(timezone.utc) - timedelta(days=30)
+CUTOFF      = CUTOFF_DT.strftime('%Y-%m-%d')   # ISO date string for NewsAPI 'from' param
 
 # macOS Python SSL fix
 SSL_CTX = ssl._create_unverified_context()
@@ -382,6 +385,20 @@ def fetch_intl_feeds():
         entries = _parse_feed_xml(root)
         batch = []
         for title, link, desc, pubdate in entries:
+            # Drop articles older than the rolling 30-day window
+            if pubdate:
+                try:
+                    dt = parsedate_to_datetime(pubdate)
+                except Exception:
+                    try:
+                        dt = datetime.fromisoformat(pubdate.replace('Z', '+00:00'))
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=timezone.utc)
+                    except Exception:
+                        dt = None
+                if dt and dt < CUTOFF_DT:
+                    continue
+
             batch.append({
                 'id':      f"intl-{abs(hash(link or title))}",
                 'title':   title,

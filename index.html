@@ -1298,7 +1298,7 @@ function enrichAll(){
 }
 
 /* ── Filter + render ── */
-const CUTOFF_MS = new Date('2026-04-01T00:00:00Z').getTime();
+const CUTOFF_MS = Date.now() - 30 * 24 * 60 * 60 * 1000; // rolling 30-day window
 function dateMs(a) { const d = new Date(a.date); return isNaN(d) ? null : d.getTime(); }
 
 const RELEVANT = () => ALL.filter(isRelevant);
