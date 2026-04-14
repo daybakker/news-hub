@@ -814,11 +814,13 @@ function isRelevant(a) {
   const txt = [a.trailName, a.title, a.content].join(' ');
   if (NOISE_RE.test(txt)) return false;
   const kw = norm(a.keyword);
+  // INTL 1/2: language-specific queries are already topic-filtered — skip English regex.
+  // INTL 3: official park agency feeds are pre-filtered by source.
+  // These checks must come BEFORE the scraped-keyword check because scraper.py
+  // stamps all items keyword='Scraped', including the international ones.
+  if (a.region === 'INTL 1' || a.region === 'INTL 2' || a.region === 'INTL 3') return true;
   // Scraped items: require BOTH a specific outdoor place word AND an access/status word
   if (kw === 'scraped') return PLACE_RE.test(txt) && ACCESS_RE.test(txt);
-  // INTL 1/2 items come from language-specific Google News queries that are already
-  // topic-filtered (e.g. "sentier fermé", "Wanderweg gesperrt") — skip English regex
-  if (a.region === 'INTL 1' || a.region === 'INTL 2') return true;
   if (!OUTDOOR_RE.test(txt)) return false;
   // NPS press releases cover wildlife/events/fees — only keep closure/danger items
   if (kw === 'nps') return CLOSURE_RE.test(txt);
