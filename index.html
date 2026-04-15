@@ -845,6 +845,7 @@ function isRelevant(a) {
   if (a.source === 'Google Sheet') return true; // team-curated, skip noise filters
   const txt = [a.trailName, a.title, a.content].join(' ');
   if (NOISE_RE.test(txt)) return false;
+  if (!a.region) return false;  // no region detected — hide unassigned items
   const kw = norm(a.keyword);
   // INTL 1/2: language-specific queries are already topic-filtered — skip English regex.
   // INTL 3: official park agency feeds are pre-filtered by source.
