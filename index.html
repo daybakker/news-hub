@@ -842,10 +842,10 @@ const ACCESS_RE = /\b(closed|closure|closing|reopen(?:ed|ing|s)?|open(?:ed|ing|s
 const CLOSURE_RE = /\b(clos(ed?|ure|ing)|reopen(ed?|s|ing)?|restrict(ed|ion|ing)?|access\s+(limited|closed|restricted|open|impacted)|trail\s+(condition|surface|damage|repair|closed)|road\s+(clos|condition|repair|damage)|permit\s+required|danger(ous)?|emergency|wildfire|prescribed\s*(fire|burn)|flood(ed|ing)?|washout|impassable|damage[d]?|temporarily\s+(clos|unavail|shut)|hazard(ous)?|warning|fire\s+(restriction|danger|closure|area)|alert|safety\s+closure|seasonal\s+closure|winter\s+closure)\b/i;
 
 function isRelevant(a) {
+  if (!a.region) return false;  // hide anything without a region, regardless of source
   if (a.source === 'Google Sheet') return true; // team-curated, skip noise filters
   const txt = [a.trailName, a.title, a.content].join(' ');
   if (NOISE_RE.test(txt)) return false;
-  if (!a.region) return false;  // no region detected — hide unassigned items
   const kw = norm(a.keyword);
   // INTL 1/2: language-specific queries are already topic-filtered — skip English regex.
   // INTL 3: official park agency feeds are pre-filtered by source.
