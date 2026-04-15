@@ -311,48 +311,11 @@ def scrape_nps_api():
     return items
 
 
-# ── 3. InciWeb RSS ────────────────────────────────────────────────────────────
-# Active wildfire / emergency incidents from the US interagency system.
-
 ATOM_NS = 'http://www.w3.org/2005/Atom'
 ATOM_ENTRY = f'{{{ATOM_NS}}}entry'
 
-def fetch_inciweb():
-    log('InciWeb RSS…')
-    url = 'https://inciweb.nwcg.gov/feeds/rss/incidents/'
-    try:
-        raw  = fetch(url)
-        root = ET.fromstring(raw.encode('utf-8', errors='replace'))
-    except Exception as e:
-        log(f'  ✗ InciWeb: {e}')
-        return []
 
-    items = []
-    for item in root.iter('item'):
-        title   = strip_tags(item.findtext('title') or '')
-        link    = (item.findtext('link') or '').strip()
-        desc    = strip_tags(item.findtext('description') or '')
-        pubdate = (item.findtext('pubDate') or '').strip()
-        if not title:
-            continue
-        combined = f'{title} {desc}'
-        items.append({
-            'id':      f"inciweb-{abs(hash(link or title))}",
-            'title':   title,
-            'content': desc[:400],
-            'url':     link,
-            'date':    pubdate,
-            'source':  'InciWeb',
-            'state':   detect_state(combined),
-            'region':  detect_region(combined),
-            'keyword': 'Scraped',
-        })
-
-    log(f'InciWeb: {len(items)} incidents')
-    return items
-
-
-# ── 4. International RSS feeds ───────────────────────────────────────────────
+# ── 3. International RSS feeds ───────────────────────────────────────────────
 # Mirrors the FEED_META entries in index.html that have a region set.
 # These feeds block browser CORS so they can't be fetched client-side on
 # GitHub Pages — scraping them here and saving to scraped_alerts.json is the
@@ -533,7 +496,6 @@ def main():
     items = []
     items.extend(fetch_google_alerts()); time.sleep(0.5)
     items.extend(scrape_nps_api());      time.sleep(0.5)
-    items.extend(fetch_inciweb());       time.sleep(0.5)
     items.extend(fetch_intl_feeds());    time.sleep(0.5)
     items.extend(fetch_newsapi())
 

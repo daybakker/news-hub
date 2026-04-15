@@ -21,7 +21,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 ALLOWED_PREFIXES = (
     'https://www.google.com/alerts/feeds/',
     'https://www.nps.gov/',
-    'https://inciweb.nwcg.gov/feeds/',
     # International park agencies
     'https://www.nationalparks.nsw.gov.au/',   # Australia – NSW
     'https://parks.qld.gov.au/',               # Australia – Queensland
