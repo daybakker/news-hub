@@ -287,7 +287,7 @@ body { font-family: var(--font); background: var(--paper); color: var(--ink);
 .rbar-track { flex:1; height:7px; background:var(--border); border-radius:4px; overflow:hidden; }
 .rbar-fill { height:100%; border-radius:4px; transition:width .5s ease; }
 .rbar-count { font-size:11px; font-weight:700; color:var(--ink-3); width:28px; text-align:right; flex-shrink:0; }
-#dash-map-wrap { border-radius:var(--r12); border:1px solid var(--border); overflow:hidden; height:240px; margin-top:4px; }
+#dash-map-wrap { border-radius:var(--r12); border:1px solid var(--border); overflow:hidden; height:320px; margin-top:4px; }
 
 /* Empty / error */
 .empty { display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -721,6 +721,7 @@ const saveDisabled    = () => localStorage.setItem(DISABLED_KEY, JSON.stringify(
 /* ── App state ── */
 let ALL = [], filtered = [], selIdx = -1, view = 'active', filt = 'all', region = 'all', src = 'all', q = '', sortOrder = 'desc';
 let mapInst = null, mapMk = null, mapCir = null;
+let dashMapInst = null, dashMapMarkers = [], dashMapToken = 0;
 const geoCache = {};
 let scrapedSources = []; // populated from /scraped-alerts metadata
 
@@ -1290,34 +1291,12 @@ function renderDash() {
     </div>
 
     <div class="dash-sec">
-      <div style="position:relative;width:100%;border-radius:var(--r12);border:1px solid var(--border);overflow:hidden;">
-        <img src="geo4.png" style="width:100%;display:block;">
-        ${(()=>{
-          const PIN_POS = {
-            'West':   {top:'24%', left:'3.8%'},
-            'North':  {top:'17%', left:'7.2%'},
-            'East':   {top:'20%', left:'10.5%'},
-            'South':  {top:'29%', left:'6.8%'},
-            'INTL 1': {top:'52%', left:'13.5%'},
-            'INTL 2': {top:'15%', left:'46.5%'},
-            'INTL 3': {top:'11%', left:'43%'},
-          };
-          const PIN_COLOR = {
-            'North':'#1350c8','South':'#b05c00','East':'#6830c0',
-            'West':'#0a7070','INTL 1':'#c2410c','INTL 2':'#0369a1','INTL 3':'#7c3aed',
-          };
-          return REGIONS.map(r => {
-            const n = rCounts[r]; if (!n) return '';
-            const p = PIN_POS[r]; const c = PIN_COLOR[r];
-            const sz = Math.min(32, 18 + Math.sqrt(n) * 1.4);
-            return `<div title="${r}: ${n} alert${n!==1?'s':''}" style="position:absolute;top:${p.top};left:${p.left};transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
-              <div style="background:${c};color:#fff;border-radius:50%;width:${sz}px;height:${sz}px;display:flex;align-items:center;justify-content:center;font-size:${sz<22?8:9}px;font-weight:700;border:1.5px solid rgba(255,255,255,.8);box-shadow:0 1px 4px rgba(0,0,0,.4);line-height:1;">${n}</div>
-              <div style="font-size:7px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9);margin-top:1px;letter-spacing:.02em;">${r}</div>
-            </div>`;
-          }).join('');
-        })()}
-      </div>
+      <div class="dash-section-title dash-sec-title">Map</div>
+      <div id="dash-map-wrap"></div>
     </div>`;
+
+  // Defer until after the browser has computed layout for #dash-map-wrap
+  setTimeout(renderDashMap, 0);
 }
 
 /* ── Enrich: derive region from inferred state ── */
@@ -1581,6 +1560,99 @@ function saveModal(id){
   if(!modalChoice) return;
   rdata[id]={ outcome:modalChoice, reason:modalChoice==='not_added'?whyTxt.value.trim():'', ts:Date.now() };
   saveR(); revOv.classList.remove('on'); updateRevBtn(id); applyFilters();
+}
+
+/* ── Dashboard map ── */
+const DASH_PIN_COLORS = {
+  'North':'#1350c8','South':'#b05c00','East':'#6830c0',
+  'West':'#0a7070','INTL 1':'#c2410c','INTL 2':'#0369a1','INTL 3':'#7c3aed'
+};
+
+function geocacheKey(a) {
+  const isNamedPark = /National\s+(Park|Forest|Monument|Recreation\s+Area|Seashore|Grassland)|State\s+Park|Wilderness(?:\s+Area)?/i.test(a.trailName||'');
+  const isIntl = a.region && a.region.startsWith('INTL');
+  if (isIntl) return [a.trailName, getCountry(a)].filter(Boolean).join(', ');
+  const st = getState(a);
+  return isNamedPark
+    ? [a.trailName, 'USA'].join(', ')
+    : [a.trailName, st.v, 'USA'].filter(Boolean).join(', ');
+}
+
+async function renderDashMap() {
+  const token = ++dashMapToken;
+
+  // Destroy old Leaflet instance (container was recreated by innerHTML)
+  if (dashMapInst) { try { dashMapInst.remove(); } catch(_){} dashMapInst = null; dashMapMarkers = []; }
+
+  const wrap = document.getElementById('dash-map-wrap');
+  if (!wrap) return;
+
+  dashMapInst = L.map(wrap, {
+    zoomControl: true,
+    attributionControl: true,
+    scrollWheelZoom: false,   // prevent stealing scroll events from the parent container
+  });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'}).addTo(dashMapInst);
+  dashMapInst.setView([38, -95], 4);
+  dashMapInst.invalidateSize();
+
+  const articles = filtered.slice();
+  const bounds = L.latLngBounds();
+  let hasBounds = false;
+
+  function placePin(a, c, idx) {
+    if (!dashMapInst || dashMapToken !== token) return;
+    const col = DASH_PIN_COLORS[a.region] || '#555';
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:10px;height:10px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:pointer;"></div>`,
+      iconSize: [10,10], iconAnchor: [5,5], popupAnchor: [0,-8]
+    });
+    const st = getState(a);
+    const sub = a.region && a.region.startsWith('INTL') ? getCountry(a) : st.v;
+    const mk = L.marker([c.lat, c.lng], {title: a.trailName||'', icon})
+      .addTo(dashMapInst)
+      .bindPopup(
+        `<b style="font-size:13px;line-height:1.4">${esc(a.trailName||a.title||'Alert')}</b>`+
+        (sub ? `<br><span style="font-size:11px;color:#888">${esc(sub)}</span>` : '')+
+        `<br><a href="#" onclick="event.preventDefault();select(${idx})" style="font-size:11px;color:#1a73e8;text-decoration:none;font-weight:600">View details →</a>`,
+        {maxWidth:220}
+      );
+    mk.on('click', () => mk.openPopup());
+    dashMapMarkers.push(mk);
+    bounds.extend([c.lat, c.lng]);
+    hasBounds = true;
+  }
+
+  // Phase 1 — instantly place pins for already-cached articles
+  articles.forEach((a, i) => {
+    const key = geocacheKey(a);
+    if (geoCache[key]) placePin(a, geoCache[key], i);
+  });
+  if (hasBounds && dashMapInst) dashMapInst.fitBounds(bounds, {padding:[24,24], maxZoom:9});
+
+  // Phase 2 — fetch uncached articles at ≤1 req/sec (Nominatim rate limit)
+  for (let i = 0; i < articles.length; i++) {
+    if (dashMapToken !== token) return;
+    const a = articles[i];
+    const key = geocacheKey(a);
+    if (geoCache[key]) continue;
+    try {
+      await new Promise(r => setTimeout(r, 1100));
+      if (dashMapToken !== token) return;
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(key)}`,
+        {headers:{'Accept-Language':'en'}});
+      const d = await resp.json();
+      if (d && d.length) {
+        const c = {lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon)};
+        geoCache[key] = c;
+        placePin(a, c, i);
+        if (hasBounds && dashMapInst) dashMapInst.fitBounds(bounds, {padding:[24,24], maxZoom:9});
+      }
+    } catch(_) {}
+  }
 }
 
 /* ── Map ── */
