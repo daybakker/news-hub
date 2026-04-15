@@ -112,7 +112,71 @@ def detect_region(text):
     return ''
 
 
-# ── 1. NewsAPI.org ────────────────────────────────────────────────────────────
+# ── 1. Google Alerts RSS ─────────────────────────────────────────────────────
+# Personal Google Alerts saved as RSS — the same feeds shown in the browser UI.
+# Scraped here so GitHub Pages (no proxy, CORS-blocked) still gets this data.
+
+GOOGLE_ALERT_FEEDS = [
+    ('https://www.google.com/alerts/feeds/07103569879278957841/13701361101803080406',
+     'Closed', '"trail closed" alert'),
+    ('https://www.google.com/alerts/feeds/07103569879278957841/422314718354908859',
+     'Open', '"trail open" alert'),
+]
+
+def fetch_google_alerts():
+    log('Google Alerts RSS…')
+    all_items = []
+
+    for url, kw, source_name in GOOGLE_ALERT_FEEDS:
+        try:
+            raw  = fetch(url)
+            root = ET.fromstring(raw.encode('utf-8', errors='replace'))
+        except Exception as e:
+            log(f'  ✗ {source_name}: {e}')
+            continue
+
+        entries = _parse_feed_xml(root)
+        batch = []
+        for title, link, desc, pubdate in entries:
+            # Date filter — keep only items within the rolling 30-day window
+            if pubdate:
+                dt = None
+                try:
+                    dt = parsedate_to_datetime(pubdate)
+                except Exception:
+                    try:
+                        dt = datetime.fromisoformat(pubdate.replace('Z', '+00:00'))
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=timezone.utc)
+                    except Exception:
+                        pass
+                if dt and dt < CUTOFF_DT:
+                    continue
+
+            combined = f'{title} {desc}'
+            us_state  = detect_state(combined)
+            us_region = detect_region(combined) if us_state else ''
+            batch.append({
+                'id':      f"alert-{abs(hash(link or title))}",
+                'title':   title,
+                'content': desc[:400],
+                'url':     link,
+                'date':    pubdate,
+                'source':  source_name,
+                'state':   us_state,
+                'region':  us_region,
+                'keyword': kw,   # 'Closed' or 'Open' — preserved by the frontend
+            })
+
+        log(f'  {source_name}: {len(batch)} items')
+        all_items.extend(batch)
+        time.sleep(0.3)
+
+    log(f'Google Alerts total: {len(all_items)} items')
+    return all_items
+
+
+# ── 2. NewsAPI.org ────────────────────────────────────────────────────────────
 # Searches thousands of news outlets worldwide for trail/park closure keywords.
 # Free tier: 100 requests/day, articles from the past month.
 
@@ -467,9 +531,10 @@ def main():
     print(f'  {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
 
     items = []
-    items.extend(scrape_nps_api());   time.sleep(0.5)
-    items.extend(fetch_inciweb());    time.sleep(0.5)
-    items.extend(fetch_intl_feeds()); time.sleep(0.5)
+    items.extend(fetch_google_alerts()); time.sleep(0.5)
+    items.extend(scrape_nps_api());      time.sleep(0.5)
+    items.extend(fetch_inciweb());       time.sleep(0.5)
+    items.extend(fetch_intl_feeds());    time.sleep(0.5)
     items.extend(fetch_newsapi())
 
     # Deduplicate

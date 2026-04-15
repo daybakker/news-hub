@@ -1716,7 +1716,7 @@ $('sources-panel').addEventListener('click', e => {
         content:      item.content || '',
         title:        item.title || '',
         link:         item.url || '',
-        keyword:      'Scraped',
+        keyword:      ['Closed','Open','NPS','Fire'].includes(item.keyword) ? item.keyword : 'Scraped',
         source:       item.source || '',
         actionable:   '',
         actionReason: '',
