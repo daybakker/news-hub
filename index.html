@@ -1322,13 +1322,32 @@ function renderDash() {
 }
 
 /* ── Enrich: derive region from inferred state ── */
+const US_REGIONS = new Set(['West','East','North','South']);
+
 function enrichAll(){
   ALL.forEach(a => {
-    if (!a.region){
-      const st = getState(a);
-      a.region = ST_REGION[st.v] || '';
+    const st = getState(a);
+    const mapped = ST_REGION[st.v] || '';
+    if (US_REGIONS.has(mapped)) {
+      // A US state was found in the text — always use the US region,
+      // even if the item was stamped INTL by its feed (e.g. a US trail
+      // picked up by the Canada or UK Google News feed).
+      a.region = mapped;
+    } else if (!a.region) {
+      a.region = mapped;
     }
   });
+}
+
+// Extract a human-readable country from an INTL item's source name.
+function getCountry(a){
+  const src = a.source || '';
+  const m = src.match(/Google News\s*[–\-]\s*([^(]+)/);
+  if (m) return m[1].trim();
+  if (/NSW National Parks|Queensland Parks/i.test(src)) return 'Australia';
+  if (/NZ Dept|Department of Conservation/i.test(src)) return 'New Zealand';
+  if (/Peak District/i.test(src)) return 'United Kingdom';
+  return '';
 }
 
 /* ── Filter + render ── */
@@ -1466,12 +1485,14 @@ function render(){
     const st = getState(a);
     const status = inferStatus(a);
     const rd = rdata[a.id];
+    const isIntl = a.region==='INTL 1'||a.region==='INTL 2'||a.region==='INTL 3';
+    const subLabel = isIntl ? (getCountry(a) || a.region) : st.v;
     div.innerHTML =
       `<div class="card-icon">${cardIconSvg(status)}</div>`+
       `<div class="card-body">`+
         `<div class="card-chips">${status ? badge('b-'+status, status) : ''}${badge(regionCls(a.region), a.region||'?')}${rd?(rd.outcome==='added'?badge('added','Added'):badge('notadd','Not added')):''}</div>`+
         `<div class="card-name">${esc(cardLabel(a))}</div>`+
-        `<div class="card-sub">${esc(st.v)}${st.v&&a.date?' · ':''}${fmtDate(a.date)}</div>`+
+        `<div class="card-sub">${esc(subLabel)}${subLabel&&a.date?' · ':''}${fmtDate(a.date)}</div>`+
         (rd&&rd.reason?`<div class="card-reason">"${esc(rd.reason)}"</div>`:'') +
       `</div>`;
     div.addEventListener('click',()=>select(i));

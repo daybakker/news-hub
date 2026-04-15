@@ -434,6 +434,12 @@ def fetch_intl_feeds():
                 if dt and dt < CUTOFF_DT:
                     continue
 
+            combined = f'{title} {desc}'
+            us_state = detect_state(combined)
+            us_region = detect_region(combined) if us_state else ''
+            # If a US state is found in the article text, reclassify to the
+            # correct US region rather than keeping the feed's INTL label.
+            actual_region = us_region if us_region in ('West','East','North','South') else region
             batch.append({
                 'id':      f"intl-{abs(hash(link or title))}",
                 'title':   title,
@@ -441,8 +447,8 @@ def fetch_intl_feeds():
                 'url':     link,
                 'date':    pubdate,
                 'source':  source_name,
-                'state':   '',
-                'region':  region,
+                'state':   us_state,
+                'region':  actual_region,
                 'keyword': 'Scraped',
             })
 
