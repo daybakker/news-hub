@@ -1416,8 +1416,16 @@ function applyFilters(){
 function renderSources(){
   const groups = {};
   [...feedStats, SHEET_STAT].forEach(s => {
-    if (!groups[s.group]) groups[s.group] = [];
-    groups[s.group].push(s);
+    let display = s;
+    // If the live feed failed, fall back to whatever scraped_alerts.json already
+    // loaded for this source — avoids showing spurious 404 errors on GitHub Pages
+    // where the proxy isn't running and CORS blocks direct INTL feed fetches.
+    if (s.status === 'error') {
+      const cachedCount = ALL.filter(a => a.source === s.name).length;
+      if (cachedCount > 0) display = { ...s, status:'ok', count:cachedCount, errorCode:null };
+    }
+    if (!groups[display.group]) groups[display.group] = [];
+    groups[display.group].push(display);
   });
   if (scrapedSources.length) groups['Scraped (NewsAPI)'] = scrapedSources;
   if (userSources.length) {
